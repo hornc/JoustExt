@@ -37,6 +37,11 @@ for($i in 9 to 29) {
     [(-)*10[+]]    // offset clear
     @checkhome($i) // don't let stuff clear our flag!
   }
-  comment "
-"
+  macro if($i != 29) {
+    comment +margins "|
+                      |"
+  } else {
+    comment +margins "|
+                      |And we're done!"
+  }
 }

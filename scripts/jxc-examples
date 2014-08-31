@@ -3,4 +3,5 @@ for i in examples/*.jx
 do
   echo "$i => `echo $i | sed "s/\\.jx/\\.bf/"`"
   scripts/jxc $i `echo $i | sed "s/\\.jx/\\.bf/"`
+  echo ""
 done

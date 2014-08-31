@@ -44,6 +44,15 @@ object phases {
     case Mul(x, y) => evaluateValue(x, vars) * evaluateValue(y, vars)
     case Div(x, y) => evaluateValue(x, vars) / evaluateValue(y, vars)
   }
+  def evaluatePredicate(p: Predicate, vars: Map[String, Int]): Boolean = p match {
+    case Equals     (a, b) => evaluateValue(a, vars) == evaluateValue(b, vars)
+    case GreaterThan(a, b) => evaluateValue(a, vars) >  evaluateValue(b, vars)
+    case LessThan   (a, b) => evaluateValue(a, vars) <  evaluateValue(b, vars)
+
+    case Not(v)    => !evaluatePredicate(v, vars)
+    case Or (a, b) => evaluatePredicate(a, vars) || evaluatePredicate(b, vars)
+    case And(a, b) => evaluatePredicate(a, vars) && evaluatePredicate(b, vars)
+  }
   def evaluateExpressions(i: Block, vars: Map[String, Int], functions: Map[String, Function])
                          (implicit options: GenerationOptions): Block = i.transverse {
     // function evaluation
@@ -70,6 +79,9 @@ object phases {
       }
     case Repeat(times, block) =>
       Repeat(evaluateValue(times, vars), evaluateExpressions(block, vars, functions))
+    case MacroIfElse(predicate, ifClause, elseClause) =>
+      if(evaluatePredicate(predicate, vars)) evaluateExpressions(ifClause, vars, functions)
+      else evaluateExpressions(elseClause, vars, functions)
 
     // fallback case
     case x => x.transverse(x => evaluateExpressions(x, vars, functions))

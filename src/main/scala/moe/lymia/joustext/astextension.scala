@@ -25,12 +25,22 @@ package moe.lymia.joustext
 object astextension {
   import ast._
 
-  // Value extensions
+  // value extensions
   final case class Variable(s: String) extends Value
   final case class Add(a: Value, b: Value) extends Value
   final case class Sub(a: Value, b: Value) extends Value
   final case class Mul(a: Value, b: Value) extends Value
   final case class Div(a: Value, b: Value) extends Value
+
+  // comparisons for compile time if/else
+  trait Predicate
+  final case class Equals     (a: Value, b: Value) extends Predicate
+  final case class LessThan   (a: Value, b: Value) extends Predicate
+  final case class GreaterThan(a: Value, b: Value) extends Predicate
+
+  final case class Not (v: Predicate)               extends Predicate
+  final case class And (a: Predicate, b: Predicate) extends Predicate
+  final case class Or  (a: Predicate, b: Predicate) extends Predicate
 
   // comments, etc
   final case class Abort(reason : String) extends SimpleInstruction
@@ -45,6 +55,11 @@ object astextension {
     def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
   }
   final case class IfElse(ifClause: Block, elseClause: Block) extends SyntheticInstruction {
+    def transverse(f: Instruction => Block) =
+      copy(ifClause   = ifClause  .transverse(f),
+           elseClause = elseClause.transverse(f))
+  }
+  final case class MacroIfElse(predicate: Predicate, ifClause: Block, elseClause: Block) extends SyntheticInstruction {
     def transverse(f: Instruction => Block) =
       copy(ifClause   = ifClause  .transverse(f),
            elseClause = elseClause.transverse(f))

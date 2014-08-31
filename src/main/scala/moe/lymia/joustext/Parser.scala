@@ -25,7 +25,6 @@ package moe.lymia.joustext
 import ast._, astextension._
 import language.postfixOps
 
-// TODO: expr time if/else expressions
 object Parser extends scala.util.parsing.combinator.RegexParsers {
   def identifier = "[a-zA-Z]+".r
 
@@ -49,6 +48,22 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def value = valueParsers.constant | valueParsers.variable | ("(" ~> valueParsers.expr <~ ")")
   def expr  = valueParsers.expr
 
+  // Predicate
+  object predicateParsers {
+    def comparison = ((expr <~ "==") ~ expr ^^ {case x~y => Equals(x, y)}) |
+                     ((expr <~ "!=") ~ expr ^^ {case x~y => Not(Equals(x, y))}) |
+                     ((expr <~ "<" ) ~ expr ^^ {case x~y => LessThan(x, y)}) |
+                     ((expr <~ ">" ) ~ expr ^^ {case x~y => GreaterThan(x, y)}) |
+                     ((expr <~ "<=") ~ expr ^^ {case x~y => Not(GreaterThan(x, y))}) |
+                     ((expr <~ ">=") ~ expr ^^ {case x~y => Not(LessThan(x, y))})
+    def combination = ("!" ~> pred ^^ Not) |
+                      ((pred <~ ("or" |"|"|"||")) ~ pred ^^ {case x~y => Or (x, y)}) |
+                      ((pred <~ ("and"|"&"|"&&")) ~ pred ^^ {case x~y => And(x, y)})
+    def pred: Parser[Predicate] = comparison | combination | ("(" ~> pred <~ ")")
+  }
+  def pred = predicateParsers.pred
+
+  // Basic instructions
   def basicInstruction = ("+" ^^^ IncMem) |
                          ("-" ^^^ DecMem) |
                          (">" ^^^ IncPtr) |
@@ -69,7 +84,13 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def ifElseBlock      =
     (("if" ~> "{" ~> block <~ "}" <~ "else" <~ "{") ~ block <~ "}" ^^ {case x~y => IfElse(x, y)}) |
     (("if" ~> "not" ~> "{" ~> block <~ "}" <~ "else" <~ "{") ~ block <~ "}" ^^ {case x~y => IfElse(y, x)})
-  def ifLikeBlock      = ifElseBlock | ifNotBlock | ifBlock
+  def macroIfElse      =
+    (("macro" ~> "if" ~> "(" ~> pred <~ ")" <~ "{") ~ block <~ "}" <~ "else" <~ "{") ~ block <~ "}" ^^ {
+      case pred~a~b => MacroIfElse(pred, a, b)
+    }
+  def macroIf          =
+    ("macro" ~> "if" ~> "(" ~> pred <~ ")" <~ "{") ~ block <~ "}" ^^ {case x~y => MacroIfElse(x,y,Seq())}
+  def ifLikeBlock      = macroIfElse | macroIf | ifElseBlock | ifNotBlock | ifBlock
 
   def fromToBlock      =
     ((("for" ~> "(" ~> "$" ~> identifier <~ "in") ~ expr <~ "to") ~ expr <~ ")" <~ "{") ~ block <~ "}" ^^ {
@@ -93,14 +114,16 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def splice           = "local" ~> "{" ~> block <~ "}" ^^ Splice
   def abort            = ("abort" ~> "\"[^\"]*\"".r ^^ (x => Abort(x.substring(1, x.length - 1)))) |
                          ("abort" ^^^ Abort("abort instruction encountered"))
-  def comment          = ("comment"|"raw") ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1)))
+  def comment          =
+    (("comment"|"raw") ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1)))) |
+    (("comment"|"raw") ~> "+margins" ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1).stripMargin)))
 
   def setCommand       = ("$" ~> identifier <~ "=") ~ expr ^^ {case x~y => (x, y)}
   def setInBlock       = ("set" ~> setCommand.* <~ "in" <~ "{") ~ block <~ "}" ^^ {case x~y => Assign(x.toMap, y)}
 
-  def extInstruction: Parser[Instruction] = foreverBlock | ifLikeBlock | fromToBlock | label | break |
-                                            letInBlock | inlineFnDef | functionCall | splice | abort |
-                                            comment | setInBlock
+  def extInstruction: Parser[Instruction] = foreverBlock | ifLikeBlock | fromToBlock | break | letInBlock |
+                                            inlineFnDef | functionCall | splice | abort | comment | setInBlock |
+                                            label
   def instruction   : Parser[Instruction] = basicInstruction | basicBlock | repeatBlock | extInstruction
   def block         : Parser[Block]       = instruction*
 
