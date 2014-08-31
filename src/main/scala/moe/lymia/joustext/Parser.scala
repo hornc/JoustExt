@@ -125,10 +125,9 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def setCommand       = ("$" ~> identifier <~ "=") ~ expr ^^ {case x~y => (x, y)}
   def setInBlock       = ("set" ~> setCommand.* <~ "in" <~ "{") ~ block <~ "}" ^^ {case x~y => Assign(x.toMap, y)}
 
-  def extInstruction: Parser[Instruction] = foreverBlock | ifLikeBlock | fromToBlock | break | letInBlock |
-                                            inlineFnDef | functionCall | splice | abort | comment | setInBlock |
-                                            invertBlock | label
-  def instruction   : Parser[Instruction] = basicInstruction | basicBlock | repeatBlock | extInstruction
+  def instruction   : Parser[Instruction] = basicInstruction | basicBlock | repeatBlock | foreverBlock | ifLikeBlock |
+                                            fromToBlock | break | letInBlock | inlineFnDef | functionCall | splice |
+                                            abort | comment | setInBlock | invertBlock | label
   def block         : Parser[Block]       = instruction*
 
   def apply(s:String) = parseAll(block, s.replaceAll("//.*", "")) match {

@@ -94,10 +94,7 @@ object phases {
     case x => x.transverse(x => evaluateExpressions(x, vars, functions))
   }
 
-  // Turn the complex functions into normal BF Joust code!
-  // This is basically the core of JoustExt.
-
-  // Gathers
+  // Gathers code we won't need to maintain continuations for, to reduce the load on linearaize.
   final case class RawBlock(block: Block) extends SyntheticInstruction {
     def mapContents(f: Block => Block) = copy(block = f(block))
   }
@@ -123,9 +120,84 @@ object phases {
     else results._2 :+ RawBlock(results._1)
   }
 
-  def linearize(i: Block)(implicit options: GenerationOptions): Block = i flatMap {
-    case x => x //throw new ASTException("Unknown AST component "+x+". Cannot linearize.")
+  // Turn the complex functions into normal BF Joust code!
+  // This is basically the core of JoustExt.
+
+  // Minimum execution time -- used to figure out when to stop expanding some constructs.
+  final case class SavedCont(
+    block: Block, state: (SavedCont, Map[String, SavedCont])) extends SyntheticInstruction {
+
+    def mapContents(f: Block => Block) = copy(block = f(block))
   }
+  val abort = SavedCont(Abort("end of program"), (null, Map()))
+  def minExecTime(ast: Block)(implicit options: GenerationOptions): Int = (ast map {
+    case StaticInstruction(_) => 1
+    case Repeat(value, block) => value * minExecTime(block)
+    case While(block)         => 1
+    case Abort(_)             => options.maxCycles
+    case Raw(_)               => 0
+    case Forever(_)           => options.maxCycles
+
+    // synthetic instructions that still exist after splice
+    case RawBlock(block)      => minExecTime(block)
+    case IfElse(a, b)         => 1 + math.min(minExecTime(a), minExecTime(b))
+    case Label(_, block)      => minExecTime(block)
+    case Break(_)             => 0
+    case SavedCont(block, _)  => minExecTime(block)
+
+    case x => throw new ASTException("Tried to find min execution time of unknown AST component: "+x.toString)
+  }).sum
+
+  // TODO Debug the crap out of.
+  def linearize(blk: Block, lastCont: SavedCont = abort, labels: Map[String, SavedCont] = Map(), cycles: Int = 0)
+               (implicit options: GenerationOptions): Block = {
+    val result = blk.tails.foldLeft((cycles, Seq[Instruction]())) {
+      case (t, Seq()) => t
+      case ((minCycles, processed), i :: left) =>
+        def continuation = SavedCont(left :+ lastCont, (lastCont, labels))
+        def buildContinuation(headInst: Block) =
+          SavedCont(headInst ++ left :+ lastCont, (lastCont, labels))
+        def appendInstruction(newInst: Block) =
+          (minCycles + minExecTime(newInst), processed ++ newInst)
+
+        if(minCycles == -1) (minCycles, processed)
+        else if(minCycles > options.maxCycles) (-1, processed :+ Abort("cycle limit exceeded"))
+        else i match {
+          case RawBlock(block) => (minCycles + minExecTime(block), processed :+ i)
+          case `abort` => (-1, abort.block)
+          case SavedCont(block, (lastCont, labels)) =>
+            // TODO I have no idea if this is correct. Figure this out better.
+            (-1, processed ++ linearize(block, lastCont, labels, minCycles))
+          case Repeat(value, block) =>
+            println(value.generate)
+            if(value.generate == 0) (minCycles, processed)
+            else appendInstruction(
+              Repeat(value, linearize(block, buildContinuation(Repeat(value - 1, block)), labels, minCycles)))
+          case While(block) =>
+            appendInstruction(While(linearize(block, buildContinuation(While(block)), labels, minCycles + 1)))
+          case Forever(block) =>
+            (-1, processed :+ Forever(linearize(block, buildContinuation(Forever(block)), labels, minCycles)))
+          case IfElse(ifClause, elseClause) =>
+            val ifLinear   = linearize(ifClause                       , continuation, labels, minCycles)
+            val elseLinear = linearize(elseClause                     , continuation, labels, minCycles)
+            val whileInst  = linearize(While(ifLinear ++ continuation), continuation, labels, minCycles)
+            (-1, processed ++ whileInst ++ elseLinear)
+          case Label(name, block) =>
+            val nextBlock = linearize(block, continuation, labels + ((name, continuation)), minCycles)
+            appendInstruction(nextBlock)
+          case Break(name) =>
+            if(!labels.contains(name)) throw new ASTException("Unknown label "+name)
+            val SavedCont(block, (lastCont, n_labels)) = labels.get(name).get
+            (-1, processed ++ linearize(block, lastCont, n_labels, minCycles))
+          case x: Abort => (-1, x)
+
+          case x => throw new ASTException("Tried to linearize unknown AST component: "+x.toString)
+        }
+    }
+    result._2
+  }
+
+  // Undo what wrapRaw did.
   def unwrapRaw(i: Block): Block = i.transverse {
     case RawBlock(x) => x.transverse(x => unwrapRaw(x))
     case x => x.transverse(x => unwrapRaw(x))

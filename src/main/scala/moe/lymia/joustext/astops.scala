@@ -42,6 +42,10 @@ object astops {
       printAst(block, out)
       out.append(")*")
       out.append(value.generate.toString)
+    case Forever(block) =>
+      out.append("(")
+      printAst(block, out)
+      out.append(")*"+options.maxCycles)
     case While(block) =>
       out.append("[")
       printAst(block, out)
@@ -52,21 +56,4 @@ object astops {
 
     case x => throw new ASTException("Tried to generate unknown AST component: "+x.toString())
   }
-
-  // Minimum execution time -- used to figure out when to stop expanding some constructs.
-  def minExecTime(ast: Block)(implicit options: GenerationOptions): Int = (ast map {
-    case StaticInstruction(_)   => 1
-    case Repeat(value, block)   => value * minExecTime(block)
-    case While(block)           => 1
-    case Abort(_)               => options.maxCycles
-    case Raw(_)                 => 0
-
-    // synthetic instructions that still exist after splice
-    case Forever(_)             => options.maxCycles
-    case IfElse(a, b)           => 1 + math.min(minExecTime(a), minExecTime(b))
-    case Label(_, block)        => minExecTime(block)
-    case Break(_)               => 0
-
-    case x => throw new ASTException("Tried to find min execution time of unknown AST component: "+x.toString())
-  }).sum
 }

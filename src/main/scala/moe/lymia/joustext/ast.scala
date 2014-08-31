@@ -65,4 +65,7 @@ object ast {
   final case class While(block: Block) extends Instruction {
     def mapContents(f: Block => Block) = copy(block = f(block))
   }
+  final case class Forever(block: Block) extends Instruction {
+    def mapContents(f: Block => Block) = copy(block = f(block))
+  }
 }

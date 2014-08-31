@@ -26,6 +26,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 object JoustExt {
+  // TODO Add command line parameters
   def main(args: Array[String]) {
     println("jxc by Lymia <lymia@lymiahugs.com>")
     println("Released under the terms of MIT license")
@@ -43,7 +44,7 @@ object JoustExt {
           val parsed = Parser(inputFile)
           parsed match {
             case Left(ast) =>
-              implicit val options = astops.GenerationOptions()
+              implicit val options = astops.GenerationOptions(maxCycles = 10000)
 
               var currentAst = ast
               for(phase <- phases.phases) {
