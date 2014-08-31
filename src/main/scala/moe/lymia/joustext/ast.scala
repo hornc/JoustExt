@@ -49,6 +49,7 @@ object ast {
   implicit def autoWrapBlock(i: Instruction): Block = Seq(i)
 
   case class StaticInstruction(s: String) extends SimpleInstruction
+  val Noop   = StaticInstruction(".")
   val IncPtr = StaticInstruction(">")
   val DecPtr = StaticInstruction("<")
   val IncMem = StaticInstruction("+")

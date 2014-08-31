@@ -64,7 +64,8 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def pred = predicateParsers.pred
 
   // Basic instructions
-  def basicInstruction = ("+" ^^^ IncMem) |
+  def basicInstruction = ("." ^^^ Noop  ) |
+                         ("+" ^^^ IncMem) |
                          ("-" ^^^ DecMem) |
                          (">" ^^^ IncPtr) |
                          ("<" ^^^ DecPtr)
