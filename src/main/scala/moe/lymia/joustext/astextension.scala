@@ -43,10 +43,10 @@ object astextension {
 
   // functions
   case class Function(params: Seq[String], body: Block)
-  final case class LetIn(definitions: Seq[Function], block: Block) extends SyntheticInstruction {
+  final case class LetIn(definitions: Map[String, Function], block: Block) extends SyntheticInstruction {
     def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
   }
-  final case class FunctionInvocation(name: Seq[Function], params: Seq[Value]) extends SyntheticInstruction {
+  final case class FunctionInvocation(name: String, params: Seq[Value]) extends SyntheticInstruction {
     def transverse(f: Instruction => Block) = this
   }
 }
