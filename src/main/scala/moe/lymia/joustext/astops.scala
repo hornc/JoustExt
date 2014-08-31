@@ -12,7 +12,8 @@ object astops {
     buf.toString
   }
   def printAst(ast: Block, out: Appendable)(implicit options: GenerationOptions): Unit = ast foreach {
-    case StaticInstruction(char) => out.append(char)
+    case StaticInstruction(char) =>
+      out.append(char)
     case Repeat(value, block) =>
       if(value < 0) throw new ASTException("Negative repeat count!")
       out.append("(")
@@ -23,8 +24,10 @@ object astops {
       out.append("[")
       printAst(block, out)
       out.append("]")
+    case Abort(reason) =>
+      out.append(",: "+reason+" (.)*"+options.maxCycles+" :,")
 
-    case _ => throw new ASTException("Tried to generate unknown AST component: "+ast.toString())
+    case x => throw new ASTException("Tried to generate unknown AST component: "+x.toString())
   }
 
   // Minimum execution time -- used to figure out when to stop expanding some constructs.
@@ -42,7 +45,8 @@ object astops {
     case Break(_)               => 0
     case LetIn(_, block)        => minExecTime(block)
     case Splice(block)          => minExecTime(block)
+    case Abort(_)               => options.maxCycles
 
-    case _ => throw new ASTException("Tried to find min execution time of unknown AST component: "+ast.toString())
+    case x => throw new ASTException("Tried to find min execution time of unknown AST component: "+x.toString())
   }).sum
 }

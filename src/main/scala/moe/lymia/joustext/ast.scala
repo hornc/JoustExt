@@ -17,15 +17,16 @@ object ast {
   trait Instruction {
     def transverse(f: Instruction => Block): Instruction
   }
+  trait SimpleInstruction extends Instruction {
+    def transverse(f: Instruction => Block) = this
+  }
   type Block = Seq[Instruction]
   implicit final class BlockExt(block: Block) {
     def transverse(f: Instruction => Block) = block.flatMap(f)
   }
   implicit def autoWrapBlock(i: Instruction): Block = Seq(i)
 
-  case class StaticInstruction(s: String) extends Instruction {
-    def transverse(f: Instruction => Block) = this
-  }
+  case class StaticInstruction(s: String) extends SimpleInstruction
   val IncPtr = StaticInstruction(">")
   val DecPtr = StaticInstruction("<")
   val IncMem = StaticInstruction("+")

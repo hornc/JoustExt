@@ -10,6 +10,9 @@ object astextension {
   final case class Mul(a: Value, b: Value) extends Value
   final case class Div(a: Value, b: Value) extends Value
 
+  // comments, etc
+  final case class Abort(reason: String) extends SimpleInstruction
+
   // synthetic instructions
   final case class SyntheticException(s: String) extends ASTException(s)
 
@@ -31,9 +34,7 @@ object astextension {
   final case class Label(label: String, block: Block) extends SyntheticInstruction {
     def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
   }
-  final case class Break(label: String) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) = this
-  }
+  final case class Break(label: String) extends SimpleInstruction
   final case class Splice(block: Block) extends SyntheticInstruction {
     def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
   }
@@ -43,7 +44,5 @@ object astextension {
   final case class LetIn(definitions: Map[String, Function], block: Block) extends SyntheticInstruction {
     def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
   }
-  final case class FunctionInvocation(name: String, params: Seq[Value]) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) = this
-  }
+  final case class FunctionInvocation(name: String, params: Seq[Value]) extends SimpleInstruction
 }
