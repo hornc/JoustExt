@@ -25,12 +25,6 @@ object astextension {
       copy(ifClause   = ifClause  .transverse(f),
            elseClause = elseClause.transverse(f))
   }
-  final case class If(block: Block) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
-  }
-  final case class IfNot(block: Block) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
-  }
   final case class FromTo(name: String, from: Value, to: Value, block: Block) extends SyntheticInstruction {
     def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
   }
@@ -39,6 +33,9 @@ object astextension {
   }
   final case class Break(label: String) extends SyntheticInstruction {
     def transverse(f: Instruction => Block) = this
+  }
+  final case class Splice(block: Block) extends SyntheticInstruction {
+    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
   }
 
   // functions

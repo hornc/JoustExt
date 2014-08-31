@@ -23,6 +23,8 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
     def term  : Parser[Value] = factor ~ (times | divide).* ^^ join
     def factor: Parser[Value] = constant | variable | ("(" ~> expr <~ ")")
   }
+  def value = valueParsers.constant | ("(" ~> valueParsers.expr <~ ")")
+  def expr  = valueParsers.expr
 
   def basicInstruction = ("+" ^^^ IncMem) |
                          ("-" ^^^ DecMem) |
@@ -31,7 +33,7 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def basicBlock       = (("[" ~> block <~ "]")           |
                           ("while" ~> "{" ~> block <~ "}")) ^^ While
   def repeatBlock      =
-    (("(" ~> block <~ ")" <~ "*") ~ valueParsers.expr ^^ {case x~y => Repeat(y, x)}) |
+    (("(" ~> block <~ ")" <~ "*") ~ value ^^ {case x~y => Repeat(y, x)}) |
     (("repeat" ~> "(" ~> valueParsers.expr <~ ")" <~ "{") ~ block <~ "}" ^^ {case x~y => Repeat(x, y)})
 
   // AST extensions
@@ -39,13 +41,15 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
     (("(" ~> block <~ ")" <~ "*" <~ "-1") |
      ("forever" ~> "{" ~> block <~ "}")   ) ^^ Forever
   // TODO Find a way to parse this without massive backtracking
-  def ifNotBlock       = "if" ~> "not" ~> "{" ~> block <~ "}" ^^ IfNot
-  def ifBlock          = "if" ~> "{" ~> block <~ "}" ^^ If
-  def ifElseBlock      = ("if" ~> "{" ~> block <~ "}" ~> "else" ~> "{") ~ block <~ "}" ^^ {case x~y => IfElse(x, y)}
-  def ifLikeBlock      = ifNotBlock | ifElseBlock | ifBlock
+  def ifNotBlock       = "if" ~> "not" ~> "{" ~> block <~ "}" ^^ {x => IfElse(Seq(), x)}
+  def ifBlock          = "if" ~> "{" ~> block <~ "}" ^^ {x => IfElse(x, Seq())}
+  def ifElseBlock      =
+    (("if" ~> "{" ~> block <~ "}" <~ "else" <~ "{") ~ block <~ "}" ^^ {case x~y => IfElse(x, y)}) |
+    (("if" ~> "not" ~> "{" ~> block <~ "}" <~ "else" <~ "{") ~ block <~ "}" ^^ {case x~y => IfElse(y, x)})
+  def ifLikeBlock      = ifElseBlock | ifNotBlock | ifBlock
 
   def fromToBlock      =
-    ((("for" ~> "$" ~> identifier <~ "in") ~ valueParsers.expr <~ "to") ~ valueParsers.expr <~ "{") ~ block <~ "}" ^^ {
+    ((("for" ~> "(" ~> "$" ~> identifier <~ "in") ~ expr <~ "to") ~ expr <~ ")" <~ "{") ~ block <~ "}" ^^ {
       case id~from~to~block => FromTo(id, from, to, block)
     }
   def label            = (identifier <~ ":") ~ ("{" ~> block <~ "}" |
@@ -53,7 +57,7 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def break            = "break" ~> identifier ^^ Break
 
   def functionCall     =
-    ("@" ~> identifier <~ "(") ~ repsep(valueParsers.expr, ",") <~ ")" ^^ {case x~y => FunctionInvocation(x, y)}
+    ("@" ~> identifier <~ "(") ~ repsep(expr, ",") <~ ")" ^^ {case x~y => FunctionInvocation(x, y)}
   def functionDef      =
     (("@" ~> identifier <~ "(") ~ repsep("$" ~> identifier, ",") <~ ")" <~ "{") ~ block <~ "}" ^^ {
       case id~param~block => (id, Function(param, block))
@@ -61,14 +65,16 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def letInBlock       = ("let" ~> functionDef.* <~ "in" <~ "{") ~ block <~ "}" ^^ {
     case fns~block => LetIn(fns.toMap, block)
   }
-  def inlineFnDef      = "def" ~> functionDef ~ block ^^ {case x~y => LetIn(Seq(x).toMap, y)}
+  def inlineFnDef      = "let" ~> functionDef ~ block ^^ {case x~y => LetIn(Seq(x).toMap, y)}
+
+  def splice           = "local" ~> "{" ~> block <~ "}" ^^ Splice
 
   def extInstruction: Parser[Instruction] = foreverBlock | ifLikeBlock | fromToBlock | label | break |
-                                            letInBlock | inlineFnDef | functionCall
+                                            letInBlock | inlineFnDef | functionCall | splice
   def instruction   : Parser[Instruction] = basicInstruction | basicBlock | repeatBlock | extInstruction
   def block         : Parser[Block]       = instruction*
 
-  def apply(s:String) = parseAll(block.*, s.replaceAll("//.*", "")) match {
+  def apply(s:String) = parseAll(block, s.replaceAll("//.*", "")) match {
     case Success(nodes, _)   => Left(nodes)
     case NoSuccess(err,next) => Right("At line "+next.pos.line+", column "+next.pos.column+": "+err)
   }

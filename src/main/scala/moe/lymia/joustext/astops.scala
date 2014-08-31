@@ -37,12 +37,11 @@ object astops {
     case Assign(_, block)       => minExecTime(block)
     case Forever(_)             => options.maxCycles
     case IfElse(a, b)           => 1 + math.min(minExecTime(a), minExecTime(b))
-    case If(block)              => minExecTime(block)
-    case IfNot(block)           => minExecTime(block)
     case FromTo(_, f, t, block) => math.max(t.generate - f.generate + 1, 0) * minExecTime(block)
     case Label(_, block)        => minExecTime(block)
     case Break(_)               => 0
     case LetIn(_, block)        => minExecTime(block)
+    case Splice(block)          => minExecTime(block)
 
     case _ => throw new ASTException("Tried to find min execution time of unknown AST component: "+ast.toString())
   }).sum
