@@ -30,7 +30,6 @@ object phases {
     case x => x.transverse(x => doSplice(x))
   }
 
-  // TODO: Make this use the tick count to be able to always resolve functions.
   final case class FunctionCallException(s: String) extends ASTException(s)
   final case class VariableException(s: String) extends ASTException(s)
   def evaluateValue(v: Value, vars: Map[String, Int]): Int = v match {
