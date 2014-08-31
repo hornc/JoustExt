@@ -14,8 +14,6 @@ object astextension {
   final case class Abort(reason: String) extends SimpleInstruction
 
   // synthetic instructions
-  final case class SyntheticException(s: String) extends ASTException(s)
-
   trait SyntheticInstruction extends Instruction
   final case class Forever(block: Block) extends SyntheticInstruction {
     def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
