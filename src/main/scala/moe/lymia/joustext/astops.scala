@@ -58,13 +58,14 @@ object astops {
     case StaticInstruction(_)   => 1
     case Repeat(value, block)   => value * minExecTime(block)
     case While(block)           => 1
+    case Abort(_)               => options.maxCycles
+    case Raw(_)                 => 0
 
     // synthetic instructions that still exist after exprs
     case Forever(_)             => options.maxCycles
     case IfElse(a, b)           => 1 + math.min(minExecTime(a), minExecTime(b))
     case Label(_, block)        => minExecTime(block)
     case Break(_)               => 0
-    case Abort(_)               => options.maxCycles
 
     case x => throw new ASTException("Tried to find min execution time of unknown AST component: "+x.toString())
   }).sum
