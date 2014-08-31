@@ -24,6 +24,7 @@ package moe.lymia.joustext
 
 import language.implicitConversions
 
+// TODO Get rid of all this repetition of mapContents
 object ast {
   class ASTException(s: String) extends RuntimeException(s)
 
@@ -37,13 +38,16 @@ object ast {
   implicit def val2Int(v: Value) = v.generate
 
   trait Instruction {
-    def transverse(f: Instruction => Block): Instruction
+    def mapContents(f: Block => Block): Instruction
+    def transverse(f: Instruction => Block): Instruction = mapContents(_.flatMap(f))
   }
   trait SimpleInstruction extends Instruction {
-    def transverse(f: Instruction => Block) = this
+    def mapContents(f: Block => Block) = this
   }
+
   type Block = Seq[Instruction]
   implicit final class BlockExt(block: Block) {
+    def mapContents(f: Block => Block) = f(block)
     def transverse(f: Instruction => Block) = block.flatMap(f)
   }
   implicit def autoWrapBlock(i: Instruction): Block = Seq(i)
@@ -56,9 +60,9 @@ object ast {
   val DecMem = StaticInstruction("-")
 
   final case class Repeat(count: Value, block: Block) extends Instruction {
-    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
+    def mapContents(f: Block => Block) = copy(block = f(block))
   }
   final case class While(block: Block) extends Instruction {
-    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
+    def mapContents(f: Block => Block) = copy(block = f(block))
   }
 }

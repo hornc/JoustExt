@@ -36,6 +36,7 @@ object phases {
     case x => x.transverse(x => doSplice(x))
   }
 
+  // evaluate values, and various other compile-time macro stuff.
   final case class FunctionCallException(s: String) extends ASTException(s)
   final case class VariableException(s: String) extends ASTException(s)
   def evaluateValue(v: Value, vars: Map[String, Int]): Int = v match {
@@ -83,6 +84,7 @@ object phases {
         evaluateExpressions(block, vars + ((name, v)), functions)
       }
     case Repeat(times, block) =>
+      if(evaluateValue(times, vars) < 0) throw new ASTException("Repeat runs negative times!")
       Repeat(evaluateValue(times, vars), evaluateExpressions(block, vars, functions))
     case MacroIfElse(predicate, ifClause, elseClause) =>
       if(evaluatePredicate(predicate, vars)) evaluateExpressions(ifClause, vars, functions)
@@ -92,12 +94,57 @@ object phases {
     case x => x.transverse(x => evaluateExpressions(x, vars, functions))
   }
 
+  // Turn the complex functions into normal BF Joust code!
+  // This is basically the core of JoustExt.
+
+  // Gathers
+  final case class RawBlock(block: Block) extends SyntheticInstruction {
+    def mapContents(f: Block => Block) = copy(block = f(block))
+  }
+  def isRaw(i: Block): Boolean = i.forall {
+    case StaticInstruction(_) => true
+    case Abort(_)             => true
+    case Raw(_)               => true
+
+    case Repeat(_, block)     => isRaw(block)
+    case While(block)         => isRaw(block)
+    case Forever(block)       => isRaw(block)
+    case Label(_, block)      => isRaw(block)
+
+    case x => false
+  }
+  def wrapRaw(i: Block): Block = {
+    val results = i.foldLeft((Seq[Instruction](), Seq[Instruction]())) { (last, i) =>
+      if(isRaw(i)) last.copy(_1 = last._1 :+ i)
+      else if(last._1.isEmpty) last.copy(_2 = last._2 :+ i.mapContents(wrapRaw))
+      else last.copy(_1 = Seq[Instruction](), _2 = last._2 :+ RawBlock(last._1) :+ i.mapContents(wrapRaw))
+    }
+    if(results._1.isEmpty) results._2
+    else results._2 :+ RawBlock(results._1)
+  }
+
+  def linearize(i: Block)(implicit options: GenerationOptions): Block = i flatMap {
+    case x => x //throw new ASTException("Unknown AST component "+x+". Cannot linearize.")
+  }
+  def unwrapRaw(i: Block): Block = i.transverse {
+    case RawBlock(x) => x.transverse(x => unwrapRaw(x))
+    case x => x.transverse(x => unwrapRaw(x))
+  }
+
+  // phase definitions
   type Phase = (Block, GenerationOptions) => Block
   final case class PhaseDef(shortName: String, description: String, fn: Phase)
   val phases = Seq(
-    PhaseDef("exprs" , "Evaluates functions, from-to blocks, and the count for repeat blocks",
+    // Preprocessing phase
+    PhaseDef("exprs"    , "Evaluates functions, from-to blocks, and the count for repeat blocks",
              (b, g) => evaluateExpressions(b, Map(), Map())(g)),
-    PhaseDef("splice", "Processes Splice blocks", (b, g) => doSplice(b))
+    PhaseDef("splice"   , "Processes Splice blocks", (b, g) => doSplice(b)),
+
+    // Core compilation phase
+    PhaseDef("wrapRaw"  , "Wraps code that doesn't need to be transformed in linearize into RawBlock objects",
+             (b, g) => wrapRaw(b)),
+    PhaseDef("linearize", "Transforms constructs such as if/else into BF Joust code", (b, g) => linearize(b)(g)),
+    PhaseDef("unwrapRaw", "Unwraps code from RawBlock blocks.", (b, g) => unwrapRaw(b))
   )
   def runPhase(p: PhaseDef, b: Block)(implicit options: GenerationOptions) = p.fn(b, options)
 }

@@ -1,0 +1,19 @@
+// This file tests code flow rewriting for implementing if/else and friends.
+
++++++[+++++]+++++
+label: repeat(10) {
+  if {
+    +
+  } else {
+    -
+  }
+
+  >
+  if {
+    <
+    break label
+  }
+  <
+  raw "- continuation -"
+}
++++++[+++++]+++++

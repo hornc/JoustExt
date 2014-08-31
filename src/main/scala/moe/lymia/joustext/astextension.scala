@@ -49,39 +49,39 @@ object astextension {
   // synthetic instructions
   trait SyntheticInstruction extends Instruction
   final case class Assign(vars: Map[String, Value], block: Block) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
+    def mapContents(f: Block => Block) = copy(block = f(block))
   }
   final case class Forever(block: Block) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
+    def mapContents(f: Block => Block) = copy(block = f(block))
   }
   final case class IfElse(ifClause: Block, elseClause: Block) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) =
-      copy(ifClause   = ifClause  .transverse(f),
-           elseClause = elseClause.transverse(f))
+    def mapContents(f: Block => Block) =
+      copy(ifClause   = f(ifClause  ),
+           elseClause = f(elseClause))
   }
   final case class MacroIfElse(predicate: Predicate, ifClause: Block, elseClause: Block) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) =
-      copy(ifClause   = ifClause  .transverse(f),
-           elseClause = elseClause.transverse(f))
+    def mapContents(f: Block => Block) =
+      copy(ifClause   = f(ifClause  ),
+           elseClause = f(elseClause))
   }
   final case class FromTo(name: String, from: Value, to: Value, block: Block) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
+    def mapContents(f: Block => Block) = copy(block = f(block))
   }
   final case class Label(label: String, block: Block) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
+    def mapContents(f: Block => Block) = copy(block = f(block))
   }
   final case class Break(label: String) extends SimpleInstruction
   final case class Splice(block: Block) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
+    def mapContents(f: Block => Block) = copy(block = f(block))
   }
   final case class Invert(block: Block) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
+    def mapContents(f: Block => Block) = copy(block = f(block))
   }
 
   // functions
   case class Function(params: Seq[String], body: Block)
   final case class LetIn(definitions: Map[String, Function], block: Block) extends SyntheticInstruction {
-    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
+    def mapContents(f: Block => Block) = copy(block = f(block))
   }
   final case class FunctionInvocation(name: String, params: Seq[Value]) extends SimpleInstruction
 }
