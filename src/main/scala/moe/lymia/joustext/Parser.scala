@@ -70,9 +70,11 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def splice           = "local" ~> "{" ~> block <~ "}" ^^ Splice
   def abort            = ("abort" ~> "\"[^\"]*\"".r ^^ (x => Abort(x.substring(1, x.length - 1)))) |
                          ("abort" ^^^ Abort("abort instruction encountered"))
+  def comment          = "comment" ~> "\"[^\"]*\"".r ^^ (x => Comment(x.substring(1, x.length - 1)))
 
   def extInstruction: Parser[Instruction] = foreverBlock | ifLikeBlock | fromToBlock | label | break |
-                                            letInBlock | inlineFnDef | functionCall | splice | abort
+                                            letInBlock | inlineFnDef | functionCall | splice | abort |
+                                            comment
   def instruction   : Parser[Instruction] = basicInstruction | basicBlock | repeatBlock | extInstruction
   def block         : Parser[Block]       = instruction*
 

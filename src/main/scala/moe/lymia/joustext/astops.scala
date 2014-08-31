@@ -26,6 +26,8 @@ object astops {
       out.append("]")
     case Abort(reason) =>
       out.append(",: "+reason+" (.)*"+options.maxCycles+" :,")
+    case Comment(text) =>
+      out.append(",: "+text+" :,\n")
 
     case x => throw new ASTException("Tried to generate unknown AST component: "+x.toString())
   }

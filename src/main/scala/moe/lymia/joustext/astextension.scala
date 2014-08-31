@@ -11,7 +11,8 @@ object astextension {
   final case class Div(a: Value, b: Value) extends Value
 
   // comments, etc
-  final case class Abort(reason: String) extends SimpleInstruction
+  final case class Abort  (reason : String) extends SimpleInstruction
+  final case class Comment(comment: String) extends SimpleInstruction
 
   // synthetic instructions
   trait SyntheticInstruction extends Instruction
