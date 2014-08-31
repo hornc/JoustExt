@@ -129,7 +129,7 @@ object phases {
 
     def mapContents(f: Block => Block) = copy(block = f(block))
   }
-  val abort = SavedCont(Abort("end of program"), (null, Map()))
+  val abort = SavedCont(Abort("eof"), (null, Map()))
   def minExecTime(ast: Block)(implicit options: GenerationOptions): Int = (ast map {
     case StaticInstruction(_) => 1
     case Repeat(value, block) => value * minExecTime(block)
@@ -161,7 +161,7 @@ object phases {
           (minCycles + minExecTime(newInst), processed ++ newInst)
 
         if(minCycles == -1) (minCycles, processed)
-        else if(minCycles > options.maxCycles) (-1, processed :+ Abort("cycle limit exceeded"))
+        else if(minCycles > options.maxCycles) (-1, processed)
         else i match {
           case RawBlock(block) => (minCycles + minExecTime(block), processed :+ i)
           case `abort` => (-1, abort.block)
@@ -169,7 +169,6 @@ object phases {
             // TODO I have no idea if this is correct. Figure this out better.
             (-1, processed ++ linearize(block, lastCont, labels, minCycles))
           case Repeat(value, block) =>
-            println(value.generate)
             if(value.generate == 0) (minCycles, processed)
             else appendInstruction(
               Repeat(value, linearize(block, buildContinuation(Repeat(value - 1, block)), labels, minCycles)))

@@ -50,7 +50,7 @@ object JoustExt {
               for(phase <- phases.phases) {
                 println("Running phase "+phase.shortName+" ("+phase.description+")")
                 currentAst = phases.runPhase(phase, currentAst)
-                println(currentAst)
+                //println(currentAst)
               }
 
               println("Writing output file...")

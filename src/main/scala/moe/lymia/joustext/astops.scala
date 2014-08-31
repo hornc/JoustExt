@@ -25,7 +25,9 @@ package moe.lymia.joustext
 object astops {
   import ast._, astextension._
 
-  final case class GenerationOptions(maxCycles: Int = 100000)
+  final case class GenerationOptions(maxCycles: Int = 100000, supportsForever: Boolean = true) {
+    val forever = if(supportsForever) -1 else maxCycles
+  }
 
   // AST Printing
   def generate(ast: Block)(implicit options: GenerationOptions) = {
@@ -38,20 +40,26 @@ object astops {
       out.append(char)
     case Repeat(value, block) =>
       if(value < 0) throw new ASTException("Negative repeat count!")
-      out.append("(")
-      printAst(block, out)
-      out.append(")*")
-      out.append(value.generate.toString)
+      else if(value.generate == 0) { /* do nothing */ }
+      else if(value.generate == 1) printAst(block, out)
+      else {
+        out.append("(")
+        printAst(block, out)
+        out.append(")*")
+        out.append(value.generate.toString)
+      }
     case Forever(block) =>
       out.append("(")
       printAst(block, out)
-      out.append(")*"+options.maxCycles)
+      out.append(")*"+options.forever)
     case While(block) =>
       out.append("[")
       printAst(block, out)
       out.append("]")
+    case Abort("eof") =>
+      out.append("eof(.)*"+options.forever)
     case Abort(reason) =>
-      out.append(",: "+reason+" (.)*"+options.maxCycles+" :,")
+      out.append(",: "+reason+" (.)*"+options.forever+" :,")
     case Raw(text) => out.append(text)
 
     case x => throw new ASTException("Tried to generate unknown AST component: "+x.toString())
