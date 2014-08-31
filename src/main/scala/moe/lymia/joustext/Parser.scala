@@ -23,7 +23,7 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
     def term  : Parser[Value] = factor ~ (times | divide).* ^^ join
     def factor: Parser[Value] = constant | variable | ("(" ~> expr <~ ")")
   }
-  def value = valueParsers.constant | ("(" ~> valueParsers.expr <~ ")")
+  def value = valueParsers.constant | valueParsers.variable | ("(" ~> valueParsers.expr <~ ")")
   def expr  = valueParsers.expr
 
   def basicInstruction = ("+" ^^^ IncMem) |
