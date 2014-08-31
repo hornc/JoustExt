@@ -1,0 +1,42 @@
+// Demonstrates long [] syntax, function syntax, and some other stuff
+
+// Note that instructions will /not/ be sanitized in comment blocks.
+comment "
+CheckHome by LymiaAluysia
+Relased under the terms of MIT license 
+"
+
+let @checkhome($a) {
+  (<)*$a
+  (+)*89
+  (>)*$a
+}
+
+comment "
+Set decoys
+"
+
+(>)*8 (-)*101 // pos 8
+<<    (+)*97  // pos 6
+<<    (-)*47  // pos 4
+<<    (+)*43  // pos 2
+<<    (-)*23  // home
+>     (+)*5   // pos 1
+>>    (-)*7   // pos 3
+>>    (-)*5   // pos 5
+>>    (+)*7   // pos 7
+>             // pos 8
+
+comment "
+
+Start clearing!
+"
+
+for($i in 9 to 29) {
+  > while {
+    [(-)*10[+]]    // offset clear
+    @checkhome($i) // don't let stuff clear our flag!
+  }
+  comment "
+"
+}
