@@ -37,7 +37,6 @@ object astops {
     case While(block)           => 1
 
     // synthetic instructions
-    case Assign(_, block)       => minExecTime(block)
     case Forever(_)             => options.maxCycles
     case IfElse(a, b)           => 1 + math.min(minExecTime(a), minExecTime(b))
     case FromTo(_, f, t, block) => math.max(t.generate - f.generate + 1, 0) * minExecTime(block)
