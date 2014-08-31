@@ -3,6 +3,11 @@ package moe.lymia.joustext
 object phases {
   import ast._, astextension._, astops._
 
+  def doSplice(i: Block): Block = i.transverse {
+    case Splice(x) => x
+    case x => doSplice(i)
+  }
+
   // TODO: Make this use the tick count to be able to always resolve functions.
   final case class FunctionCallException(s: String) extends ASTException(s)
   final case class VariableException(s: String) extends ASTException(s)
@@ -43,4 +48,13 @@ object phases {
     // fallback case
     case x =>  evaluateExpressions(x, vars, functions)
   }
+
+  type Phase = (Block, GenerationOptions) => Block
+  final case class PhaseDef(shortName: String, description: String, fn: Phase)
+  val phases = Seq(
+    PhaseDef("splice", "Processes Splice blocks.", (b, g) => doSplice(b)),
+    PhaseDef("exprs" , "Evaluates functions, from-to blocks, and the count for repeat blocks.",
+             (b, g) => evaluateExpressions(b, Map(), Map())(g))
+  )
+  def runPhase(p: PhaseDef, b: Block)(implicit options: GenerationOptions) = p.fn(b, options)
 }
