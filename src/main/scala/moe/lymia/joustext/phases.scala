@@ -25,8 +25,14 @@ package moe.lymia.joustext
 object phases {
   import ast._, astextension._, astops._
 
+  def doInvert(i: Block): Block = i.transverse {
+    case IncMem => DecMem
+    case DecMem => IncMem
+    case x => x.transverse(x => doInvert(x))
+  }
   def doSplice(i: Block): Block = i.transverse {
     case Splice(x) => x.transverse(x => doSplice(x))
+    case Invert(x) => doInvert(x).transverse(x => doSplice(x))
     case x => x.transverse(x => doSplice(x))
   }
 
@@ -89,9 +95,9 @@ object phases {
   type Phase = (Block, GenerationOptions) => Block
   final case class PhaseDef(shortName: String, description: String, fn: Phase)
   val phases = Seq(
-    PhaseDef("splice", "Processes Splice blocks", (b, g) => doSplice(b)),
     PhaseDef("exprs" , "Evaluates functions, from-to blocks, and the count for repeat blocks",
-             (b, g) => evaluateExpressions(b, Map(), Map())(g))
+             (b, g) => evaluateExpressions(b, Map(), Map())(g)),
+    PhaseDef("splice", "Processes Splice blocks", (b, g) => doSplice(b))
   )
   def runPhase(p: PhaseDef, b: Block)(implicit options: GenerationOptions) = p.fn(b, options)
 }

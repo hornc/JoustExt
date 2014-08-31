@@ -61,7 +61,7 @@ object astops {
     case Abort(_)               => options.maxCycles
     case Raw(_)                 => 0
 
-    // synthetic instructions that still exist after exprs
+    // synthetic instructions that still exist after splice
     case Forever(_)             => options.maxCycles
     case IfElse(a, b)           => 1 + math.min(minExecTime(a), minExecTime(b))
     case Label(_, block)        => minExecTime(block)

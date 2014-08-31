@@ -74,6 +74,9 @@ object astextension {
   final case class Splice(block: Block) extends SyntheticInstruction {
     def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
   }
+  final case class Invert(block: Block) extends SyntheticInstruction {
+    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
+  }
 
   // functions
   case class Function(params: Seq[String], body: Block)

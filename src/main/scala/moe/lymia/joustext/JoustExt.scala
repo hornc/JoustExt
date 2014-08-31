@@ -48,7 +48,7 @@ object JoustExt {
               var currentAst = ast
               for(phase <- phases.phases) {
                 println("Running phase "+phase.shortName+" ("+phase.description+")")
-                currentAst = phases.runPhase(phase, ast)
+                currentAst = phases.runPhase(phase, currentAst)
               }
 
               println("Writing output file...")
