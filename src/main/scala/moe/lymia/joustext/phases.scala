@@ -177,10 +177,9 @@ object phases {
           case Forever(block) =>
             (-1, processed :+ Forever(linearize(block, buildContinuation(Forever(block)), labels, minCycles)))
           case IfElse(ifClause, elseClause) =>
-            val ifLinear   = linearize(ifClause                       , continuation, labels, minCycles)
             val elseLinear = linearize(elseClause                     , continuation, labels, minCycles)
-            val whileInst  = linearize(While(ifLinear ++ continuation), continuation, labels, minCycles)
-            (-1, processed ++ whileInst ++ elseLinear)
+            val whileInst  = linearize(While(ifClause ++ continuation), continuation, labels, minCycles)
+            (minCycles + minExecTime(elseLinear) + 1, processed ++ whileInst ++ elseLinear)
           case Label(name, block) =>
             val nextBlock = linearize(block, continuation, labels + ((name, continuation)), minCycles)
             appendInstruction(nextBlock)

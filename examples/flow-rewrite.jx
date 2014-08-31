@@ -14,6 +14,6 @@ label: repeat(10) {
     break label
   }
   <
-  raw "- continuation -"
+  raw "= continuation ="
 }
 +++++[+++++]+++++
