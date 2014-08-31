@@ -1,0 +1,19 @@
+comment "
+a = 10
+b = 16
+c = 21
+"
+
+set $a = 10
+    $b = 16
+    $c = 21
+in {
+  comment "
+a + b * 10 = " ()*($a + $b * 10)
+  comment "
+a + b * c = " ()*($a + $b * $c)
+  comment "
+c * 100 / b = " ()*($c * 100 / $b)
+  comment "
+a * b * c / (a + b - c) = " ()*($a * $b * $c / ($a + $b - $c))
+}

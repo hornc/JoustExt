@@ -1,0 +1,2 @@
+#!/bin/sh
+scala -classpath target/scala-2.11/bfjoust-utils_2.11-1.0.jar moe.lymia.joustext.JoustExt $*

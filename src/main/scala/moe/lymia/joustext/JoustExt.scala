@@ -27,8 +27,12 @@ import java.util.Date
 
 object JoustExt {
   def main(args: Array[String]) {
+    println("jxc by Lymia <lymia@lymiahugs.com>")
+    println("Released under the terms of MIT license")
+    println("")
+
     if(args.length != 2) {
-      println("Usage: [input file] [output file]")
+      println("Usage: scripts/jxc [input file] [output file]")
       System.exit(1)
     } else {
       val time = System.currentTimeMillis()

@@ -3,7 +3,7 @@
 // Note that instructions will /not/ be sanitized in comment blocks.
 comment "
 CheckHome by LymiaAluysia
-Relased under the terms of MIT license 
+Released under the terms of MIT license 
 "
 
 let @checkhome($a) {
