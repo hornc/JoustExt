@@ -38,6 +38,9 @@ object astextension {
 
   // synthetic instructions
   trait SyntheticInstruction extends Instruction
+  final case class Assign(vars: Map[String, Value], block: Block) extends SyntheticInstruction {
+    def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
+  }
   final case class Forever(block: Block) extends SyntheticInstruction {
     def transverse(f: Instruction => Block) = copy(block = block.transverse(f))
   }

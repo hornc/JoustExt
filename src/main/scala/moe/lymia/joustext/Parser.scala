@@ -95,9 +95,12 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
                          ("abort" ^^^ Abort("abort instruction encountered"))
   def comment          = ("comment"|"raw") ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1)))
 
+  def setCommand       = ("$" ~> identifier <~ "=") ~ expr ^^ {case x~y => (x, y)}
+  def setInBlock       = ("set" ~> setCommand.* <~ "in" <~ "{") ~ block <~ "}" ^^ {case x~y => Assign(x.toMap, y)}
+
   def extInstruction: Parser[Instruction] = foreverBlock | ifLikeBlock | fromToBlock | label | break |
                                             letInBlock | inlineFnDef | functionCall | splice | abort |
-                                            comment
+                                            comment | setInBlock
   def instruction   : Parser[Instruction] = basicInstruction | basicBlock | repeatBlock | extInstruction
   def block         : Parser[Block]       = instruction*
 

@@ -59,6 +59,10 @@ object phases {
       val newValues = function.params.zip(params.map(x => evaluateValue(x, vars))).toMap
       evaluateExpressions(function.body, vars ++ newValues, functions)
 
+    // assign
+    case Assign(values, block) =>
+      evaluateExpressions(block, vars ++ values.map(x => (x._1, evaluateValue(x._2, vars))), functions)
+
     // reify stuff that uses values
     case FromTo(name, from, to, block) =>
       (evaluateValue(from, vars) to evaluateValue(to, vars)) flatMap {v =>
