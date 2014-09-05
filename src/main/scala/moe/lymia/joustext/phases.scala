@@ -106,7 +106,6 @@ object phases {
     case Repeat(_, block)     => isRaw(block)
     case While(block)         => isRaw(block)
     case Forever(block)       => isRaw(block)
-    case Label(_, block)      => isRaw(block)
 
     case x => false
   }
@@ -140,9 +139,6 @@ object phases {
 
     // synthetic instructions that still exist after splice
     case RawBlock(block)      => minExecTime(block)
-    case IfElse(a, b)         => 1 + math.min(minExecTime(a), minExecTime(b))
-    case Label(_, block)      => minExecTime(block)
-    case Break(_)             => 0
     case SavedCont(block, _)  => minExecTime(block)
 
     case x => throw new ASTException("Tried to find min execution time of unknown AST component: "+x.toString)
@@ -176,17 +172,6 @@ object phases {
             appendInstruction(While(linearize(block, buildContinuation(While(block)), labels, minCycles + 1)))
           case Forever(block) =>
             (-1, processed :+ Forever(linearize(block, buildContinuation(Forever(block)), labels, minCycles)))
-          case IfElse(ifClause, elseClause) =>
-            val elseLinear = linearize(elseClause                     , continuation, labels, minCycles)
-            val whileInst  = linearize(While(ifClause ++ continuation), continuation, labels, minCycles)
-            (minCycles + minExecTime(elseLinear) + 1, processed ++ whileInst ++ elseLinear)
-          case Label(name, block) =>
-            val nextBlock = linearize(block, continuation, labels + ((name, continuation)), minCycles)
-            appendInstruction(nextBlock)
-          case Break(name) =>
-            if(!labels.contains(name)) throw new ASTException("Unknown label "+name)
-            val SavedCont(block, (lastCont, n_labels)) = labels.get(name).get
-            (-1, processed ++ linearize(block, lastCont, n_labels, minCycles))
           case x: Abort => (-1, x)
 
           case x => throw new ASTException("Tried to linearize unknown AST component: "+x.toString)

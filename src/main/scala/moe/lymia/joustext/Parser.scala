@@ -79,27 +79,19 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def foreverBlock     =
     (("(" ~> block <~ ")" <~ "*" <~ "-1") |
      ("forever" ~> "{" ~> block <~ "}")   ) ^^ Forever
-  // TODO Find a way to parse this without massive backtracking
-  def ifNotBlock       = "if" ~> "not" ~> "{" ~> block <~ "}" ^^ {x => IfElse(Seq(), x)}
-  def ifBlock          = "if" ~> "{" ~> block <~ "}" ^^ {x => IfElse(x, Seq())}
-  def ifElseBlock      =
-    (("if" ~> "{" ~> block <~ "}" <~ "else" <~ "{") ~ block <~ "}" ^^ {case x~y => IfElse(x, y)}) |
-    (("if" ~> "not" ~> "{" ~> block <~ "}" <~ "else" <~ "{") ~ block <~ "}" ^^ {case x~y => IfElse(y, x)})
+
   def macroIfElse      =
-    (("macro" ~> "if" ~> "(" ~> pred <~ ")" <~ "{") ~ block <~ "}" <~ "else" <~ "{") ~ block <~ "}" ^^ {
+    (("if" ~> "(" ~> pred <~ ")" <~ "{") ~ block <~ "}" <~ "else" <~ "{") ~ block <~ "}" ^^ {
       case pred~a~b => MacroIfElse(pred, a, b)
     }
   def macroIf          =
-    ("macro" ~> "if" ~> "(" ~> pred <~ ")" <~ "{") ~ block <~ "}" ^^ {case x~y => MacroIfElse(x,y,Seq())}
-  def ifLikeBlock      = macroIfElse | macroIf | ifElseBlock | ifNotBlock | ifBlock
+    ("if" ~> "(" ~> pred <~ ")" <~ "{") ~ block <~ "}" ^^ {case x~y => MacroIfElse(x,y,Seq())}
+  def ifLikeBlock      = macroIfElse | macroIf
 
   def fromToBlock      =
     ((("for" ~> "(" ~> "$" ~> identifier <~ "in") ~ expr <~ "to") ~ expr <~ ")" <~ "{") ~ block <~ "}" ^^ {
       case id~from~to~block => FromTo(id, from, to, block)
     }
-  def label            = (identifier <~ ":") ~ ("{" ~> block <~ "}" |
-                                                instruction ^^ (x => Seq(x))) ^^ {case x~y => Label(x, y)}
-  def break            = "break" ~> identifier ^^ Break
 
   def functionCall     =
     ("@" ~> identifier <~ "(") ~ repsep(expr, ",") <~ ")" ^^ {case x~y => FunctionInvocation(x, y)}
@@ -126,8 +118,8 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def setInBlock       = ("set" ~> setCommand.* <~ "in" <~ "{") ~ block <~ "}" ^^ {case x~y => Assign(x.toMap, y)}
 
   def instruction   : Parser[Instruction] = basicInstruction | basicBlock | repeatBlock | foreverBlock | ifLikeBlock |
-                                            fromToBlock | break | letInBlock | inlineFnDef | functionCall | splice |
-                                            abort | comment | setInBlock | invertBlock | label
+                                            fromToBlock | letInBlock | inlineFnDef | functionCall | splice | abort |
+                                            comment | setInBlock | invertBlock
   def block         : Parser[Block]       = instruction*
 
   def apply(s:String) = parseAll(block, s.replaceAll("//.*", "")) match {
