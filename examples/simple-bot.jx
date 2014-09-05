@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Note that instructions will /not/ be sanitized in comment blocks.
 comment "
 CheckHomeSimple by LymiaAluysia
 Released under the terms of MIT license 

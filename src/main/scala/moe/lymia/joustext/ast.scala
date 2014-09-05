@@ -44,6 +44,10 @@ object ast {
   trait SimpleInstruction extends Instruction {
     def mapContents(f: Block => Block) = this
   }
+  trait SimpleBlock extends Instruction { this: { def copy(block: Block): Instruction } =>
+    val block: Block
+    def mapContents(f: Block => Block) = copy(block = f(block))
+  }
 
   type Block = Seq[Instruction]
   implicit final class BlockExt(block: Block) {
@@ -64,10 +68,6 @@ object ast {
   final case class Repeat(count: Value, block: Block) extends Instruction {
     def mapContents(f: Block => Block) = copy(block = f(block))
   }
-  final case class While(block: Block) extends Instruction {
-    def mapContents(f: Block => Block) = copy(block = f(block))
-  }
-  final case class Forever(block: Block) extends Instruction {
-    def mapContents(f: Block => Block) = copy(block = f(block))
-  }
+  final case class While(block: Block) extends SimpleBlock
+  final case class Forever(block: Block) extends SimpleBlock
 }

@@ -59,10 +59,10 @@ object astextension {
   final case class FromTo(name: String, from: Value, to: Value, block: Block) extends SyntheticInstruction {
     def mapContents(f: Block => Block) = copy(block = f(block))
   }
-  final case class Splice(block: Block) extends SyntheticInstruction {
-    def mapContents(f: Block => Block) = copy(block = f(block))
-  }
-  final case class Invert(block: Block) extends SyntheticInstruction {
+  final case class Splice(block: Block) extends SyntheticInstruction with SimpleBlock
+  final case class Invert(block: Block) extends SyntheticInstruction with SimpleBlock
+
+  final case class CallCC(name: String, block: Block) extends SyntheticInstruction {
     def mapContents(f: Block => Block) = copy(block = f(block))
   }
 
