@@ -19,20 +19,25 @@
 // SOFTWARE.
 
 comment "
-a = 10
-b = 16
-c = 21
+Test 1
 "
 
-$a = 10
-$b = 16
-$c = 21
+[ reset {
+  callcc(@cont) {
+    [[@cont()] @cont()]
+    ([@cont()] @cont())*10
+  }
+  comment " after continuation "
+} ]
 
-comment +margins "|
-                  |a + b * 10 = " ()*($a + $b * 10)
-comment +margins "|
-                  |a + b * c = " ()*($a + $b * $c)
-comment +margins "|
-                  |c * 100 / b = " ()*($c * 100 / $b)
-comment +margins "|
-                  |a * b * c / (a + b - c) = " ()*($a * $b * $c / ($a + $b - $c))
+comment "
+Test 2
+"
+
+[ reset {
+  (
+    callcc(@cont) {
+      @cont()
+    }
+  )*10
+} ]

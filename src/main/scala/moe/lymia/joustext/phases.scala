@@ -159,17 +159,17 @@ object phases {
             appendInstruction(While(linearize(block, buildContinuation(While(block)), conts, minCycles + 1)))
           case Forever(block) =>
             (-1, processed :+ Forever(linearize(block, buildContinuation(Forever(block)), conts, minCycles)))
-          case Reset(block) =>
-            appendInstruction(Reset(linearize(block, abort, conts, minCycles + 1)))
           case x: Abort => (-1, x)
 
+          case Reset(block) =>
+            appendInstruction(linearize(block, abort, conts, minCycles + 1))
           case CallCC(name, block) =>
-            (-1, linearize(block, lastCont, conts + ((name, continuation)), minCycles))
+            val nextBlock = linearize(block, continuation, conts + ((name, continuation)), minCycles)
+            appendInstruction(nextBlock)
           case InvokeContinuation(name) =>
-            if(!conts.contains(name))
-              throw new ASTException("Unknown continuation "+name)
-            val SavedCont(block, (saved, oldConts)) = conts.get(name).get
-            (-1, processed ++ linearize(block, saved, oldConts, minCycles))
+            if(!conts.contains(name)) throw new ASTException("Unknown continuation "+name)
+            val SavedCont(block, (lastCont, n_labels)) = conts.get(name).get
+            (-1, processed ++ linearize(block, lastCont, n_labels, minCycles))
 
           case x => (minCycles + minExecTime(x), processed :+ x)
         }
@@ -188,6 +188,8 @@ object phases {
 
     // Core compilation phase
     PhaseDef("linearize", "Transforms constructs such as if/else into BF Joust code", (b, g) => linearize(b)(g))
+
+    // TODO: Optimization phases that get rid of nonsense like (eof)*10
   )
   def runPhase(p: PhaseDef, b: Block)(implicit options: GenerationOptions) = p.fn(b, options)
 }

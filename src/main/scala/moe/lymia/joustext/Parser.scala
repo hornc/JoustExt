@@ -77,15 +77,12 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def repeatBlock      = ("(" ~> block <~ ")" <~ "*") ~ value ^^ {case x~y => Repeat(y, x)}
 
   // AST extensions
-  def foreverBlock     =
-    "(" ~> block <~ ")" <~ "*" <~ "-1" ^^ Forever
-
+  def foreverBlock     = "(" ~> block <~ ")" <~ "*" <~ "-1" ^^ Forever
   def ifBlock          =
     (("if" ~> "(" ~> pred <~ ")" <~ "{") ~ block <~ "}" <~ "else" <~ "{") ~ block <~ "}" ^^ {
       case pred~a~b => IfElse(pred, a, b)
     } |
     ("if" ~> "(" ~> pred <~ ")" <~ "{") ~ block <~ "}" ^^ {case x~y => IfElse(x,y,Seq())}
-
   def fromToBlock      =
     ((("for" ~> "(" ~> "$" ~> identifier <~ "in") ~ expr <~ "to") ~ expr <~ ")" <~ "{") ~ block <~ "}" ^^ {
       case id~from~to~block => FromTo(id, from, to, block)
@@ -112,12 +109,13 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def setCommand       = ("$" ~> identifier <~ "=") ~ expr ^^ {case x~y => Map(x -> y)}
   def inlineSetCommand = setCommand ~ block ^^ {case x~y => Assign(x, y)}
 
-  def callCC           = ("callcc" ~> "@" ~> identifier) ~ block ^^ {case x~y => CallCC(x, y)}
+  def callCC           =
+    ("callcc" ~> "(" ~> "@" ~> identifier <~ ")" <~ "{") ~ block <~ "}" ^^ {case x~y => CallCC(x, y)}
   def reset            = "reset" ~> "{" ~> block <~ "}" ^^ Reset
 
-  def instruction   : Parser[Instruction] = basicInstruction | basicBlock | repeatBlock | foreverBlock | ifBlock |
+  def instruction   : Parser[Instruction] = basicInstruction | basicBlock | foreverBlock | repeatBlock | ifBlock |
                                             fromToBlock | inlineFnDef | functionCall | splice | abort | comment |
-                                            inlineSetCommand | invertBlock | reset
+                                            inlineSetCommand | invertBlock | reset | callCC
   def block         : Parser[Block]       = (instruction <~ ";".?).*
 
   def apply(s:String) = parseAll(block, s.replaceAll("//.*", "")) match {
