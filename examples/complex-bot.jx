@@ -5,15 +5,15 @@ CheckHome by LymiaAluysia
 Released under the terms of MIT license 
 "
 
-let @checktripwire($a) {
+@checktripwire($a) {
 }
 
-let @checkhome($a) {
+@checkhome($a) {
   (<)*$a
   (+)*89
   (>)*$a
 }
-let @loop_tripcheck($a) {
+@loop_tripcheck($a) {
   
 }
 
@@ -38,11 +38,12 @@ Start clearing!
 "
 
 for($i in 9 to 29) {
-  > while {
+  > [
     [(-)*10[+]]    // offset clear
     @checkhome($i) // don't let stuff clear our flag!
-  }
-  macro if($i != 29) {
+  ]
+
+  if($i != 29) {
     comment +margins "|
                       |"
   } else {

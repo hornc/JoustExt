@@ -51,7 +51,7 @@ object astextension {
   final case class Assign(vars: Map[String, Value], block: Block) extends SyntheticInstruction {
     def mapContents(f: Block => Block) = copy(block = f(block))
   }
-  final case class MacroIfElse(predicate: Predicate, ifClause: Block, elseClause: Block) extends SyntheticInstruction {
+  final case class IfElse(predicate: Predicate, ifClause: Block, elseClause: Block) extends SyntheticInstruction {
     def mapContents(f: Block => Block) =
       copy(ifClause   = f(ifClause  ),
            elseClause = f(elseClause))

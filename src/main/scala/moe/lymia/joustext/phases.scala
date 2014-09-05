@@ -86,7 +86,7 @@ object phases {
     case Repeat(times, block) =>
       if(evaluateValue(times, vars) < 0) throw new ASTException("Repeat runs negative times!")
       Repeat(evaluateValue(times, vars), evaluateExpressions(block, vars, functions))
-    case MacroIfElse(predicate, ifClause, elseClause) =>
+    case IfElse(predicate, ifClause, elseClause) =>
       if(evaluatePredicate(predicate, vars)) evaluateExpressions(ifClause, vars, functions)
       else evaluateExpressions(elseClause, vars, functions)
 
