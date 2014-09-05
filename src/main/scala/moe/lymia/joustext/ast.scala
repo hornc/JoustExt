@@ -51,7 +51,7 @@ object ast {
 
   type Block = Seq[Instruction]
   implicit final class BlockExt(block: Block) {
-    def mapContents(f: Block => Block) = f(block)
+    def mapContents(f: Block => Block) = block.flatMap(_.mapContents(f))
     def transverse(f: Instruction => Block) = block.flatMap(f)
   }
   implicit def autoWrapBlock(i: Instruction): Block = Seq(i)

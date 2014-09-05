@@ -132,7 +132,8 @@ object phases {
     case x => throw new ASTException("Tried to find min execution time of unknown AST component: "+x.toString)
   }).sum
 
-  // TODO Debug the crap out of.
+  /* TODO Add some kind of optimization? There's probably special cases where we won't lose cycles from
+     TODO some shorter generated code. */
   def linearize(blk: Block, lastCont: SavedCont = abort, conts: Map[String, SavedCont] = Map(), cycles: Int = 0)
                (implicit options: GenerationOptions): Block = {
     val result = blk.tails.foldLeft((cycles, Seq[Instruction]())) {
@@ -149,7 +150,6 @@ object phases {
         else i match {
           case `abort` => (-1, processed ++ abort.block)
           case SavedCont(block, (saved, oldConts)) =>
-            // TODO I have no idea if this is correct. Figure this out better.
             (-1, processed ++ linearize(block, saved, oldConts, minCycles))
           case Repeat(value, block) =>
             if(value.generate == 0) (minCycles, processed)
@@ -177,6 +177,31 @@ object phases {
     result._2
   }
 
+  // Optimization phases
+  def isTerminating(i: Instruction) = i match {
+    case _: Forever => false
+    case _: Abort   => false
+
+    case _ => true
+  }
+  def cutNonTerminating(b: Block): Block = {
+    val (nonTerm, dead) = b.span(isTerminating)
+    if(dead.isEmpty) nonTerm.mapContents(cutNonTerminating)
+    else nonTerm.mapContents(cutNonTerminating) :+ dead.head
+  }
+
+  def unwrapNonTerminating(b: Block): Block = b.flatMap {
+    case Forever(x)    if x.nonEmpty && !isTerminating(x.last) => unwrapNonTerminating(x)
+    case Repeat (_, x) if x.nonEmpty && !isTerminating(x.last) => unwrapNonTerminating(x)
+
+    case x => x.mapContents(unwrapNonTerminating)
+  }
+  def dce(b: Block): Block = {
+    val n = unwrapNonTerminating(cutNonTerminating(b))
+    if(n!=b) dce(n)
+    else n
+  }
+
   // phase definitions
   type Phase = (Block, GenerationOptions) => Block
   final case class PhaseDef(shortName: String, description: String, fn: Phase)
@@ -187,9 +212,11 @@ object phases {
     PhaseDef("splice"   , "Processes Splice blocks", (b, g) => doSplice(b)),
 
     // Core compilation phase
-    PhaseDef("linearize", "Transforms constructs such as if/else into BF Joust code", (b, g) => linearize(b)(g))
+    PhaseDef("linearize", "Transforms constructs such as if/else into BF Joust code", (b, g) => linearize(b)(g)),
 
-    // TODO: Optimization phases that get rid of nonsense like (eof)*10
+    // Optimization
+    PhaseDef("dce"      , "Simple dead code elimination.", (b, g) => dce(b))
+    // TODO: Optimize [a]a to .a (maybe?)
   )
   def runPhase(p: PhaseDef, b: Block)(implicit options: GenerationOptions) = p.fn(b, options)
 }

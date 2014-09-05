@@ -26,6 +26,8 @@ Test 1
   callcc(@cont) {
     [[@cont()] @cont()]
     ([@cont()] @cont())*10
+    (+)*-1
+    comment " dead code "
   }
   comment " after continuation "
 } ]
@@ -36,8 +38,10 @@ Test 2
 
 [ reset {
   (
+    +
     callcc(@cont) {
       @cont()
     }
   )*10
+  comment " after continuation "
 } ]
