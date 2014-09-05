@@ -1,4 +1,4 @@
-name := "bfjoust-utils"
+name := "joustext"
 
 version := "1.0"
 

@@ -26,7 +26,7 @@ import ast._, astextension._
 import language.postfixOps
 
 object Parser extends scala.util.parsing.combinator.RegexParsers {
-  def identifier = "[a-zA-Z]+".r
+  def identifier = "[a-zA-Z_][a-zA-Z0-9_]*".r
 
   // Value
   object valueParsers {

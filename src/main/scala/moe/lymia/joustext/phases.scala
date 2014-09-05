@@ -164,7 +164,7 @@ object phases {
         else if(minCycles > options.maxCycles) (-1, processed)
         else i match {
           case RawBlock(block) => (minCycles + minExecTime(block), processed :+ i)
-          case `abort` => (-1, abort.block)
+          case `abort` => (-1, processed ++ abort.block)
           case SavedCont(block, (lastCont, labels)) =>
             // TODO I have no idea if this is correct. Figure this out better.
             (-1, processed ++ linearize(block, lastCont, labels, minCycles))

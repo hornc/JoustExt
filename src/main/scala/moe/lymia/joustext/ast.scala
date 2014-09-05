@@ -22,7 +22,7 @@
 
 package moe.lymia.joustext
 
-import language.implicitConversions
+import scala.language.implicitConversions
 
 // TODO Get rid of all this repetition of mapContents
 object ast {
@@ -58,6 +58,8 @@ object ast {
   val DecPtr = StaticInstruction("<")
   val IncMem = StaticInstruction("+")
   val DecMem = StaticInstruction("-")
+
+  val NullInstruction = StaticInstruction("")
 
   final case class Repeat(count: Value, block: Block) extends Instruction {
     def mapContents(f: Block => Block) = copy(block = f(block))

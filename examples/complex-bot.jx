@@ -1,15 +1,20 @@
-// Demonstrates long [] syntax, function syntax, and some other stuff
+// Demonstrates various complex syntax constructs.
 
-// Note that instructions will /not/ be sanitized in comment blocks.
 comment "
-CheckHomeSimple by LymiaAluysia
+CheckHome by LymiaAluysia
 Released under the terms of MIT license 
 "
+
+let @checktripwire($a) {
+}
 
 let @checkhome($a) {
   (<)*$a
   (+)*89
   (>)*$a
+}
+let @loop_tripcheck($a) {
+  
 }
 
 comment "
