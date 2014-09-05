@@ -136,7 +136,7 @@ object phases {
   }).sum
 
   /* TODO Add some kind of optimization? There's probably special cases where we won't lose cycles from
-     TODO some shorter generated code. */
+     TODO some shorter generated code. ... could have saved the older approach too. */
   def linearize(blk: Block, lastCont: SavedCont = abort, conts: Map[String, SavedCont] = Map(), cycles: Int = 0)
                (implicit options: GenerationOptions): Block = {
     val result = blk.tails.foldLeft((cycles, Seq[Instruction]())) {
@@ -218,7 +218,7 @@ object phases {
     PhaseDef("linearize", "Transforms constructs such as if/else into BF Joust code", (b, g) => linearize(b)(g)),
 
     // Optimization
-    PhaseDef("dce"      , "Simple dead code elimination.", (b, g) => dce(b))
+    PhaseDef("dce"      , "Simple dead code elimination", (b, g) => dce(b))
     // TODO: Optimize [a]a to .a (maybe?)
   )
   def runPhase(p: PhaseDef, b: Block)(implicit options: GenerationOptions) = p.fn(b, options)

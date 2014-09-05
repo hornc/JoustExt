@@ -1,0 +1,2 @@
+#!/bin/sh
+rm -rf target project/target examples/*.bf

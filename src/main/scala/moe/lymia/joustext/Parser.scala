@@ -104,8 +104,8 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def invertBlock      = "invert" ~> "{" ~> block <~ "}" ^^ Invert
 
   def comment          =
-    "raw" ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1)))) |
-    "raw" ~> "+margins" ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1).stripMargin)))
+    "raw" ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1))) |
+    "raw" ~> "+margins" ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1).stripMargin))
 
   def setCommand       = ("$" ~> identifier <~ "=") ~ expr ^^ {case x~y => Map(x -> y)}
   def inlineSetCommand = setCommand ~ block ^^ {case x~y => Assign(x, y)}
