@@ -57,7 +57,7 @@ object astops {
       printAst(block, out)
       out.append("]")
     case Abort("eof") =>
-      out.append("eof(.)*"+options.forever)
+      out.append("(.)*"+options.forever)
     case Abort(reason) =>
       out.append(",: "+reason+" (.)*"+options.forever+" :,")
     case Raw(text) => out.append(text)
