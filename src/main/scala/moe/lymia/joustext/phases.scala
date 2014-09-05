@@ -94,41 +94,17 @@ object phases {
     case x => x.transverse(x => evaluateExpressions(x, vars, functions))
   }
 
-  // Gathers code we won't need to maintain continuations for, to reduce the load on linearaize.
-  final case class RawBlock(block: Block) extends SyntheticInstruction {
-    def mapContents(f: Block => Block) = copy(block = f(block))
-  }
-  def isRaw(i: Block): Boolean = i.forall {
-    case StaticInstruction(_) => true
-    case Abort(_)             => true
-    case Raw(_)               => true
-
-    case Repeat(_, block)     => isRaw(block)
-    case While(block)         => isRaw(block)
-    case Forever(block)       => isRaw(block)
-
-    case x => false
-  }
-  def wrapRaw(i: Block): Block = {
-    val results = i.foldLeft((Seq[Instruction](), Seq[Instruction]())) { (last, i) =>
-      if(isRaw(i)) last.copy(_1 = last._1 :+ i)
-      else if(last._1.isEmpty) last.copy(_2 = last._2 :+ i.mapContents(wrapRaw))
-      else last.copy(_1 = Seq[Instruction](), _2 = last._2 :+ RawBlock(last._1) :+ i.mapContents(wrapRaw))
-    }
-    if(results._1.isEmpty) results._2
-    else results._2 :+ RawBlock(results._1)
-  }
-
   // Turn the complex functions into normal BF Joust code!
   // This is basically the core of JoustExt.
 
-  // Minimum execution time -- used to figure out when to stop expanding some constructs.
   final case class SavedCont(
     block: Block, state: (SavedCont, Map[String, SavedCont])) extends SyntheticInstruction {
 
     def mapContents(f: Block => Block) = copy(block = f(block))
   }
   val abort = SavedCont(Abort("eof"), (null, Map()))
+
+  // Minimum execution time -- used to figure out when to stop expanding some constructs.
   def minExecTime(ast: Block)(implicit options: GenerationOptions): Int = (ast map {
     case StaticInstruction(_) => 1
     case Repeat(value, block) => value * minExecTime(block)
@@ -138,7 +114,6 @@ object phases {
     case Forever(_)           => options.maxCycles
 
     // synthetic instructions that still exist after splice
-    case RawBlock(block)      => minExecTime(block)
     case SavedCont(block, _)  => minExecTime(block)
 
     case x => throw new ASTException("Tried to find min execution time of unknown AST component: "+x.toString)
@@ -159,7 +134,6 @@ object phases {
         if(minCycles == -1) (minCycles, processed)
         else if(minCycles > options.maxCycles) (-1, processed)
         else i match {
-          case RawBlock(block) => (minCycles + minExecTime(block), processed :+ i)
           case `abort` => (-1, processed ++ abort.block)
           case SavedCont(block, (lastCont, labels)) =>
             // TODO I have no idea if this is correct. Figure this out better.
@@ -174,16 +148,10 @@ object phases {
             (-1, processed :+ Forever(linearize(block, buildContinuation(Forever(block)), labels, minCycles)))
           case x: Abort => (-1, x)
 
-          case x => throw new ASTException("Tried to linearize unknown AST component: "+x.toString)
+          case x => (minCycles + minExecTime(x), processed :+ x)
         }
     }
     result._2
-  }
-
-  // Undo what wrapRaw did.
-  def unwrapRaw(i: Block): Block = i.transverse {
-    case RawBlock(x) => x.transverse(x => unwrapRaw(x))
-    case x => x.transverse(x => unwrapRaw(x))
   }
 
   // phase definitions
@@ -196,10 +164,7 @@ object phases {
     PhaseDef("splice"   , "Processes Splice blocks", (b, g) => doSplice(b)),
 
     // Core compilation phase
-    PhaseDef("wrapRaw"  , "Wraps code that doesn't need to be transformed in linearize into RawBlock objects",
-             (b, g) => wrapRaw(b)),
-    PhaseDef("linearize", "Transforms constructs such as if/else into BF Joust code", (b, g) => linearize(b)(g)),
-    PhaseDef("unwrapRaw", "Unwraps code from RawBlock blocks.", (b, g) => unwrapRaw(b))
+    PhaseDef("linearize", "Transforms constructs such as if/else into BF Joust code", (b, g) => linearize(b)(g))
   )
   def runPhase(p: PhaseDef, b: Block)(implicit options: GenerationOptions) = p.fn(b, options)
 }
