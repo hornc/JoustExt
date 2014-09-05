@@ -62,6 +62,6 @@ object astops {
       out.append(",: "+reason+" (.)*"+options.forever+" :,")
     case Raw(text) => out.append(text)
 
-    case x => throw new ASTException("Tried to generate unknown AST component: "+x.toString())
+    case x => throw new ASTException("Tried to generate unknown AST component: "+x.toString)
   }
 }

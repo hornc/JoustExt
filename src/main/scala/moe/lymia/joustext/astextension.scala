@@ -65,6 +65,7 @@ object astextension {
   final case class CallCC(name: String, block: Block) extends SyntheticInstruction {
     def mapContents(f: Block => Block) = copy(block = f(block))
   }
+  final case class Reset (block: Block) extends SyntheticInstruction with SimpleBlock
 
   // functions
   case class Function(params: Seq[String], body: Block)

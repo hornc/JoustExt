@@ -113,10 +113,11 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def inlineSetCommand = setCommand ~ block ^^ {case x~y => Assign(x, y)}
 
   def callCC           = ("callcc" ~> "@" ~> identifier) ~ block ^^ {case x~y => CallCC(x, y)}
+  def reset            = "reset" ~> "{" ~> block <~ "}" ^^ Reset
 
   def instruction   : Parser[Instruction] = basicInstruction | basicBlock | repeatBlock | foreverBlock | ifBlock |
                                             fromToBlock | inlineFnDef | functionCall | splice | abort | comment |
-                                            inlineSetCommand | invertBlock | callCC
+                                            inlineSetCommand | invertBlock | reset
   def block         : Parser[Block]       = (instruction <~ ";".?).*
 
   def apply(s:String) = parseAll(block, s.replaceAll("//.*", "")) match {

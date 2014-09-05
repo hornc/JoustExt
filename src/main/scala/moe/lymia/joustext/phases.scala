@@ -59,20 +59,30 @@ object phases {
     case Or (a, b) => evaluatePredicate(a, vars) || evaluatePredicate(b, vars)
     case And(a, b) => evaluatePredicate(a, vars) && evaluatePredicate(b, vars)
   }
-  def evaluateExpressions(i: Block, vars: Map[String, Int], functions: Map[String, Function])
+  final case class InvokeContinuation(name: String) extends SimpleInstruction
+  def evaluateExpressions(i: Block, vars: Map[String, Int], functions: Map[String, Option[Function]])
                          (implicit options: GenerationOptions): Block = i.transverse {
     // function evaluation
     case LetIn(definitions, block) =>
-      evaluateExpressions(block, vars, functions ++ definitions)
+      evaluateExpressions(block, vars, functions ++ definitions.map(x => x.copy(_2 = Some(x._2))))
+    case CallCC(name, block) =>
+      CallCC(name, evaluateExpressions(block, vars, functions + ((name, None))))
+
     case FunctionInvocation(name, params) =>
       if(!functions.contains(name)) throw FunctionCallException("No such function: "+name)
-      val function = functions.get(name).get
-      if(function.params.length != params.length)
-        throw FunctionCallException("Called function "+name+" with "+params.length+" parameters. "+
-                                    "("+function.params.length+" expected.)")
+      functions.get(name).get match {
+        case Some(function) =>
+          if(function.params.length != params.length)
+            throw FunctionCallException("Called function "+name+" with "+params.length+" parameters. "+
+              "("+function.params.length+" expected.)")
 
-      val newValues = function.params.zip(params.map(x => evaluateValue(x, vars))).toMap
-      evaluateExpressions(function.body, vars ++ newValues, functions)
+          val newValues = function.params.zip(params.map(x => evaluateValue(x, vars))).toMap
+          evaluateExpressions(function.body, vars ++ newValues, functions)
+        case None =>
+          if(params.length != 0)
+            throw FunctionCallException("Continuation "+name+" does not take parameters")
+          InvokeContinuation(name)
+      }
 
     // assign
     case Assign(values, block) =>
@@ -106,28 +116,31 @@ object phases {
 
   // Minimum execution time -- used to figure out when to stop expanding some constructs.
   def minExecTime(ast: Block)(implicit options: GenerationOptions): Int = (ast map {
-    case StaticInstruction(_) => 1
-    case Repeat(value, block) => value * minExecTime(block)
-    case While(block)         => 1
-    case Abort(_)             => options.maxCycles
-    case Raw(_)               => 0
-    case Forever(_)           => options.maxCycles
+    case StaticInstruction(_)  => 1
+    case Repeat(value, block)  => value * minExecTime(block)
+    case While(block)          => 1
+    case Abort(_)              => options.maxCycles
+    case Raw(_)                => 0
+    case Forever(_)            => options.maxCycles
 
     // synthetic instructions that still exist after splice
-    case SavedCont(block, _)  => minExecTime(block)
+    case SavedCont(block, _)   => options.maxCycles
+    case InvokeContinuation(_) => options.maxCycles
+    case Reset(block)          => minExecTime(block)
+    case CallCC(name, block)   => minExecTime(block)
 
     case x => throw new ASTException("Tried to find min execution time of unknown AST component: "+x.toString)
   }).sum
 
   // TODO Debug the crap out of.
-  def linearize(blk: Block, lastCont: SavedCont = abort, labels: Map[String, SavedCont] = Map(), cycles: Int = 0)
+  def linearize(blk: Block, lastCont: SavedCont = abort, conts: Map[String, SavedCont] = Map(), cycles: Int = 0)
                (implicit options: GenerationOptions): Block = {
     val result = blk.tails.foldLeft((cycles, Seq[Instruction]())) {
       case (t, Seq()) => t
       case ((minCycles, processed), i :: left) =>
-        def continuation = SavedCont(left :+ lastCont, (lastCont, labels))
+        def continuation = SavedCont(left :+ lastCont, (lastCont, conts))
         def buildContinuation(headInst: Block) =
-          SavedCont(headInst ++ left :+ lastCont, (lastCont, labels))
+          SavedCont(headInst ++ left :+ lastCont, (lastCont, conts))
         def appendInstruction(newInst: Block) =
           (minCycles + minExecTime(newInst), processed ++ newInst)
 
@@ -135,18 +148,28 @@ object phases {
         else if(minCycles > options.maxCycles) (-1, processed)
         else i match {
           case `abort` => (-1, processed ++ abort.block)
-          case SavedCont(block, (lastCont, labels)) =>
+          case SavedCont(block, (saved, oldConts)) =>
             // TODO I have no idea if this is correct. Figure this out better.
-            (-1, processed ++ linearize(block, lastCont, labels, minCycles))
+            (-1, processed ++ linearize(block, saved, oldConts, minCycles))
           case Repeat(value, block) =>
             if(value.generate == 0) (minCycles, processed)
             else appendInstruction(
-              Repeat(value, linearize(block, buildContinuation(Repeat(value - 1, block)), labels, minCycles)))
+              Repeat(value, linearize(block, buildContinuation(Repeat(value - 1, block)), conts, minCycles)))
           case While(block) =>
-            appendInstruction(While(linearize(block, buildContinuation(While(block)), labels, minCycles + 1)))
+            appendInstruction(While(linearize(block, buildContinuation(While(block)), conts, minCycles + 1)))
           case Forever(block) =>
-            (-1, processed :+ Forever(linearize(block, buildContinuation(Forever(block)), labels, minCycles)))
+            (-1, processed :+ Forever(linearize(block, buildContinuation(Forever(block)), conts, minCycles)))
+          case Reset(block) =>
+            appendInstruction(Reset(linearize(block, abort, conts, minCycles + 1)))
           case x: Abort => (-1, x)
+
+          case CallCC(name, block) =>
+            (-1, linearize(block, lastCont, conts + ((name, continuation)), minCycles))
+          case InvokeContinuation(name) =>
+            if(!conts.contains(name))
+              throw new ASTException("Unknown continuation "+name)
+            val SavedCont(block, (saved, oldConts)) = conts.get(name).get
+            (-1, processed ++ linearize(block, saved, oldConts, minCycles))
 
           case x => (minCycles + minExecTime(x), processed :+ x)
         }
