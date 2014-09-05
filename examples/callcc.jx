@@ -27,9 +27,7 @@ Test 1
     [[@cont()] @cont()]
     ([@cont()] @cont())*10
     (+)*-1
-    comment " dead code "
   }
-  comment " after continuation "
 } ]
 
 comment "
@@ -43,5 +41,4 @@ Test 2
       @cont()
     }
   )*10
-  comment " after continuation "
 } ]
