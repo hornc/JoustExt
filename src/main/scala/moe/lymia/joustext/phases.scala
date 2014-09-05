@@ -49,6 +49,7 @@ object phases {
     case Sub(x, y) => evaluateValue(x, vars) - evaluateValue(y, vars)
     case Mul(x, y) => evaluateValue(x, vars) * evaluateValue(y, vars)
     case Div(x, y) => evaluateValue(x, vars) / evaluateValue(y, vars)
+    case Mod(x, y) => evaluateValue(x, vars) % evaluateValue(y, vars)
   }
   def evaluatePredicate(p: Predicate, vars: Map[String, Int]): Boolean = p match {
     case Equals     (a, b) => evaluateValue(a, vars) == evaluateValue(b, vars)
@@ -60,6 +61,8 @@ object phases {
     case And(a, b) => evaluatePredicate(a, vars) && evaluatePredicate(b, vars)
   }
   final case class InvokeContinuation(name: String) extends SimpleInstruction
+
+  // TODO: Optimize this to generate continuations only once per call/cc block.
   def evaluateExpressions(i: Block, vars: Map[String, Int], functions: Map[String, Option[Function]])
                          (implicit options: GenerationOptions): Block = i.transverse {
     // function evaluation

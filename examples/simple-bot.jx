@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-comment "
+raw "
 CheckHomeSimple by LymiaAluysia
 Released under the terms of MIT license 
 "
@@ -29,7 +29,7 @@ Released under the terms of MIT license
   (>)*$a
 }
 
-comment "
+raw "
 Set decoys
 "
 
@@ -44,7 +44,7 @@ Set decoys
 >>    (+)*7   // pos 7
 >             // pos 8
 
-comment "
+raw "
 
 Start clearing!
 "
@@ -56,10 +56,10 @@ for($i in 9 to 29) {
   ]
 
   if($i != 29) {
-    comment +margins "|
-                      |"
+    raw +margins "|
+                  |"
   } else {
-    comment +margins "|
-                      |And we're done!"
+    raw +margins "|
+                  |And we're done!"
   }
 }

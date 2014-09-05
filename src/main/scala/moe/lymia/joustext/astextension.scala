@@ -31,6 +31,7 @@ object astextension {
   final case class Sub(a: Value, b: Value) extends Value
   final case class Mul(a: Value, b: Value) extends Value
   final case class Div(a: Value, b: Value) extends Value
+  final case class Mod(a: Value, b: Value) extends Value
 
   // comparisons for compile time if/else
   trait Predicate

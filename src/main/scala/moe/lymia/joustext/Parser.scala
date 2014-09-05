@@ -38,14 +38,15 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
     def minus  = "-" ~> term   ^^ defer(Sub)
     def times  = "*" ~> factor ^^ defer(Mul)
     def divide = "/" ~> factor ^^ defer(Div)
+    def mod    = "%" ~> factor ^^ defer(Mod)
 
     def unNeg : Parser[Value] = (("-" ~> constant)          |
                                  ("-" ~> variable)          |
                                  ("-" ~> "(" ~> expr <~ ")")) ^^ (x => Sub(0, x))
 
     def join(parse: Value ~ Seq[Value=>Value]) = parse._2.foldLeft(parse._1)((a, f) => f(a))
-    def expr  : Parser[Value] = term ~ (plus | minus).*     ^^ join
-    def term  : Parser[Value] = factor ~ (times | divide).* ^^ join
+    def expr  : Parser[Value] = term ~ (plus | minus).*           ^^ join
+    def term  : Parser[Value] = factor ~ (times | divide | mod).* ^^ join
     def factor: Parser[Value] = constant | variable | unNeg | ("(" ~> expr <~ ")")
   }
   def value = valueParsers.constant | valueParsers.variable | ("(" ~> valueParsers.expr <~ ")")
@@ -60,8 +61,8 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
                      ((expr <~ "<=") ~ expr ^^ {case x~y => Not(GreaterThan(x, y))}) |
                      ((expr <~ ">=") ~ expr ^^ {case x~y => Not(LessThan(x, y))})
     def combination = ("!" ~> pred ^^ Not) |
-                      ((pred <~ ("or" |"|"|"||")) ~ pred ^^ {case x~y => Or (x, y)}) |
-                      ((pred <~ ("and"|"&"|"&&")) ~ pred ^^ {case x~y => And(x, y)})
+                      ((pred <~ "|") ~ pred ^^ {case x~y => Or (x, y)}) |
+                      ((pred <~ "&") ~ pred ^^ {case x~y => And(x, y)})
     def pred: Parser[Predicate] = comparison | combination | ("(" ~> pred <~ ")")
   }
   def pred = predicateParsers.pred
@@ -96,15 +97,15 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
     }
   def inlineFnDef      = functionDef ~ block ^^ {case x~y => LetIn(x, y)}
 
-  def splice           = ("local"|"@") ~> "{" ~> block <~ "}" ^^ Splice
+  def splice           = "local" ~> "{" ~> block <~ "}" ^^ Splice
   def abort            = ("abort" ~> "\"[^\"]*\"".r ^^ (x => Abort(x.substring(1, x.length - 1)))) |
                          ("abort" ^^^ Abort("abort instruction encountered"))
 
   def invertBlock      = "invert" ~> "{" ~> block <~ "}" ^^ Invert
 
   def comment          =
-    (("comment"|"raw") ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1)))) |
-    (("comment"|"raw") ~> "+margins" ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1).stripMargin)))
+    "raw" ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1)))) |
+    "raw" ~> "+margins" ~> "\"[^\"]*\"".r ^^ (x => Raw(x.substring(1, x.length - 1).stripMargin)))
 
   def setCommand       = ("$" ~> identifier <~ "=") ~ expr ^^ {case x~y => Map(x -> y)}
   def inlineSetCommand = setCommand ~ block ^^ {case x~y => Assign(x, y)}

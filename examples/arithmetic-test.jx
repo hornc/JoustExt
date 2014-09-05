@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-comment "
+raw "
 a = 10
 b = 16
 c = 21
@@ -28,11 +28,11 @@ $a = 10
 $b = 16
 $c = 21
 
-comment +margins "|
-                  |a + b * 10 = " ()*($a + $b * 10)
-comment +margins "|
-                  |a + b * c = " ()*($a + $b * $c)
-comment +margins "|
-                  |c * 100 / b = " ()*($c * 100 / $b)
-comment +margins "|
-                  |a * b * c / (a + b - c) = " ()*($a * $b * $c / ($a + $b - $c))
+raw +margins "|
+              |a + b * 10 = " ()*($a + $b * 10)
+raw +margins "|
+              |a + b * c = " ()*($a + $b * $c)
+raw +margins "|
+              |c * 100 / b = " ()*($c * 100 / $b)
+raw +margins "|
+              |a * b * c / (a + b - c) = " ()*($a * $b * $c / ($a + $b - $c))
