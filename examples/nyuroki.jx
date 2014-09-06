@@ -31,38 +31,56 @@ raw +margins "|Nyuroki Magical Fantasy by Lymia Aluysia
 <(-)*(128-109) // Change our home flag to throw off simpler bots.
 
 // And, then let's just rush!
-@wiggleClear($innerCount, $outerCount) {
-  @wiggleClearInner($count) {
+@wiggleClear($neg0, $pos0, $neg1, $pos1, $neg2, $pos2) {
+  @wiggleClearPos($adjustment, $count) {
     if($count == 0) {
-      (+)*82 [[+.].]
-      @break() // In case anyone tries to beat us by locking us in our loop.
+      (-)*$adjustment
+      @clearBody()
     } else {
       +[
-        @wiggleClearInner($count - 1)
+        @wiggleClearPos($adjustment, $count - 1)
       ]
     }
   }
-  @wiggleClearOuter($initCount, $innerCount, $count) {
+  @wiggleClearNeg($adjustment, $count) {
     if($count == 0) {
-      (+)*$initCount
-      @wiggleClearInner($innerCount)
+      (+)*$adjustment
+      @clearBody()
     } else {
       -[
-        @wiggleClearOuter($initCount, $innerCount, $count - 1)
+        @wiggleClearNeg($adjustment, $count - 1)
       ]
     }
   }
 
-  @wiggleClearOuter($outerCount, $innerCount, $outerCount)
+  @clearBody() {
+    @clearBody() {
+      @clearBody() {
+        @clearBody() {
+          @clearBody() {
+            @clearBody() {
+              (+)*82 [[+.].]
+              @break() // In case anyone tries to beat us by locking us in our loop.
+            }
+            @wiggleClearPos(0, $pos2 - $pos1)
+          }
+          @wiggleClearNeg($neg2 + $pos1, $neg2 - $neg1)
+        }
+        @wiggleClearPos($pos1 + $neg1, $pos1 - $pos0)
+      }
+      @wiggleClearNeg($neg1 + $pos0, $neg1 - $neg0)
+    }
+    @wiggleClearPos($pos0 + $neg0, $pos0)
+  }
+  @wiggleClearNeg($neg0, $neg0)
 }
 (>)*8 // Rule of 9
 (
   > callcc(@break) {
     // Clear counts shamelessly adjusted to hill.
-    [@wiggleClear(32, 30)]
+    [@wiggleClear(3, 3, 13, 11, 30, 32)]
   }
-  - // One tick offset, so we have a chance at bypassing shudder locks.
-    // The extra decoy also helps a little.
+  --
 )*21
 
 // ... oh screw it. Not worth the binary size.
