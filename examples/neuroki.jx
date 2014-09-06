@@ -37,7 +37,7 @@ raw +margins "|Neuroki Magical Fantasy by Lymia Aluysia
 @wiggleClear($innerCount, $outerCount) {
   @wiggleClearInner($count) {
     if($count == 0) {
-      @clearLoop()
+      (+)*142 [[+.].]
       @break() // In case anyone tries to beat us by locking us in our loop.
     } else {
       -[
@@ -71,12 +71,6 @@ raw +margins "|Neuroki Magical Fantasy by Lymia Aluysia
   // make /sure/ the last tape cell gets cleared.
   (-.--.---.)*-1
 }
-@fastRush($tapePos) {  
-  @clearLoop() {
-    (+)*142 [[+.].]
-  }
-  @rush($tapePos, 30, 32)
-}
 
  (>)*8
  (+)*1
@@ -90,4 +84,4 @@ raw +margins "|Neuroki Magical Fantasy by Lymia Aluysia
 <(-)*(128-109) // Change our home flag to throw off simpler bots.
 
 // And, then let's just rush!
-@fastRush(0)
+@rush(0, 30, 32)
