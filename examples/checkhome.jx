@@ -25,7 +25,7 @@ raw +margins "|CheckHome by Lymia Aluysia
 
 @checkhome($a) {
   (<)*$a
-  (+)*89
+  (+)*(101-$a*2)
   (>)*$a
 }
 
