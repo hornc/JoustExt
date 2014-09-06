@@ -111,73 +111,57 @@ object phases {
   // This is basically the core of JoustExt.
 
   final case class SavedCont(
-    block: Block, state: (SavedCont, Map[String, SavedCont])) extends SyntheticInstruction {
+    block: Block, state: (SavedCont, Map[String, Block])) extends SyntheticInstruction {
 
     def mapContents(f: Block => Block) = copy(block = f(block))
+    def debugPrint() {
+      astops.printAst(linearize(block, state._1, state._2), System.out)(GenerationOptions(supportsForever = true))
+      System.out.println()
+    }
   }
   val abort = SavedCont(Abort("eof"), (null, Map()))
 
   // Minimum execution time -- used to figure out when to stop expanding some constructs.
-  def minExecTime(ast: Block)(implicit options: GenerationOptions): Int = (ast map {
-    case StaticInstruction(_)  => 1
-    case Repeat(value, block)  => value * minExecTime(block)
-    case While(block)          => 1
-    case Abort(_)              => options.maxCycles
-    case Raw(_)                => 0
-    case Forever(_)            => options.maxCycles
-
-    // synthetic instructions that still exist after splice
-    case SavedCont(block, _)   => options.maxCycles
-    case InvokeContinuation(_) => options.maxCycles
-    case Reset(block)          => minExecTime(block)
-    case CallCC(name, block)   => minExecTime(block)
-
-    case x => throw new ASTException("Tried to find min execution time of unknown AST component: "+x.toString)
-  }).sum
-
-  /* TODO Add some kind of optimization? There's probably special cases where we won't lose cycles from
-     TODO some shorter generated code. ... could have saved the older approach too. */
-  def linearize(blk: Block, lastCont: SavedCont = abort, conts: Map[String, SavedCont] = Map(), cycles: Int = 0)
-               (implicit options: GenerationOptions): Block = {
-    val result = blk.tails.foldLeft((cycles, Seq[Instruction]())) {
-      case (t, Seq()) => t
-      case ((minCycles, processed), i :: left) =>
+  def linearize(blk: Block, lastCont: SavedCont = abort, conts: Map[String, Block] = Map()): Block = {
+    blk.tails.foldLeft((false, Seq[Instruction]())) {
+      case (out, Seq()) => out
+      case ((ended, processed), i :: left) =>
         def continuation = SavedCont(left :+ lastCont, (lastCont, conts))
         def buildContinuation(headInst: Block) =
-          SavedCont(headInst ++ left :+ lastCont, (lastCont, conts))
+          SavedCont((headInst ++ left) :+ lastCont, (lastCont, conts))
         def appendInstruction(newInst: Block) =
-          (minCycles + minExecTime(newInst), processed ++ newInst)
+          (false, processed ++ newInst)
 
-        if(minCycles == -1) (minCycles, processed)
-        else if(minCycles > options.maxCycles) (-1, processed)
+        if(ended) (true, processed)
         else i match {
-          case `abort` => (-1, processed ++ abort.block)
+          case `abort` => (true, processed ++ abort.block)
           case SavedCont(block, (saved, oldConts)) =>
-            (-1, processed ++ linearize(block, saved, oldConts, minCycles))
+            (true, processed ++ linearize(block, saved, oldConts))
           case Repeat(value, block) =>
-            if(value.generate == 0) (minCycles, processed)
+            if(value.generate == 0) (ended, processed)
             else appendInstruction(
-              Repeat(value, linearize(block, buildContinuation(Repeat(value - 1, block)), conts, minCycles)))
+              Repeat(value, linearize(block, buildContinuation(Repeat(value - 1, block)), conts)))
           case While(block) =>
-            appendInstruction(While(linearize(block, buildContinuation(While(block)), conts, minCycles + 1)))
+            appendInstruction(While(linearize(block, buildContinuation(While(block)), conts)))
           case Forever(block) =>
-            (-1, processed :+ Forever(linearize(block, buildContinuation(Forever(block)), conts, minCycles)))
-          case x: Abort => (-1, x)
+            (true, processed :+ Forever(linearize(block, buildContinuation(Forever(block)), conts)))
+          case x: Abort => (true, x)
 
           case Reset(block) =>
-            appendInstruction(linearize(block, abort, conts, minCycles + 1))
+            appendInstruction(linearize(block, abort, conts))
           case CallCC(name, block) =>
-            val nextBlock = linearize(block, continuation, conts + ((name, continuation)), minCycles)
+            val currentCont = continuation
+            val contBlock   = linearize(currentCont.block, currentCont.state._1, currentCont.state._2)
+            val nextBlock   = linearize(block, currentCont, conts + ((name, contBlock)))
+
             appendInstruction(nextBlock)
           case InvokeContinuation(name) =>
             if(!conts.contains(name)) throw new ASTException("Unknown continuation "+name)
-            val SavedCont(block, (lastCont, n_labels)) = conts.get(name).get
-            (-1, processed ++ linearize(block, lastCont, n_labels, minCycles))
+            (true, processed ++ conts.get(name).get)
 
-          case x => (minCycles + minExecTime(x), processed :+ x)
+          case x => (false, processed :+ x)
         }
-    }
-    result._2
+    }._2
   }
 
   // Optimization phases
@@ -215,7 +199,7 @@ object phases {
     PhaseDef("splice"   , "Processes Splice blocks", (b, g) => doSplice(b)),
 
     // Core compilation phase
-    PhaseDef("linearize", "Transforms constructs such as if/else into BF Joust code", (b, g) => linearize(b)(g)),
+    PhaseDef("linearize", "Transforms constructs such as if/else into BF Joust code", (b, g) => linearize(b)),
 
     // Optimization
     PhaseDef("dce"      , "Simple dead code elimination", (b, g) => dce(b))

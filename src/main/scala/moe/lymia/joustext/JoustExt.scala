@@ -56,7 +56,6 @@ object JoustExt {
               println("Writing output file...")
               val out = new java.io.PrintWriter(args(1))
               val date = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date())
-              out.println("Program compiled by JoustExt by Lymia on "+date)
               astops.printAst(currentAst, out)
               out.println("")
               out.close()

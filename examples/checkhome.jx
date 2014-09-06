@@ -18,10 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-raw "
-CheckHome by LymiaAluysia
-Released under the terms of MIT license 
-"
+raw +margins "|CheckHome by Lymia Aluysia
+              |Released under the terms of MIT license
+              |
+              |"
 
 @checkhome($a) {
   (<)*$a
