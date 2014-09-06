@@ -135,6 +135,8 @@ object phases {
         if(ended) (true, processed)
         else i match {
           case `abort` => (true, processed ++ abort.block)
+          case Terminate =>
+            (true, processed)
           case SavedCont(block, (saved, oldConts)) =>
             (true, processed ++ linearize(block, saved, oldConts))
           case Repeat(value, block) =>

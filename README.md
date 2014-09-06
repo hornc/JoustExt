@@ -125,6 +125,9 @@ However, this means that there is absolutely no way to output a raw `"` characte
 The `raw` may be followed by `+margins` token to cause the JoustExt compiler to strip all text up to the first `|` on each line.
 In other words, Scala's String.stripMargins is called on the contents of the block.
 
+The `abort` command has the same syntax as the `raw` command, with the exception that `raw` doesn't support `+margins`.
+`abort` will output a message to the output file, and then execute `(.)*-1`.
+
 `//` comments in raw blocks are **not** output in the final program, due to a lazy implementation of comments.
 
     raw "foo"
@@ -135,6 +138,7 @@ In other words, Scala's String.stripMargins is called on the contents of the blo
                   | bar"
     raw " foo // baz
           bar" // baz will NOT appear in the final output.
+    abort "We can't do anything anymore. :("
 
 There is a `for` block construct that allows you to count iterations unlike `(a)*n`.
 
@@ -144,6 +148,9 @@ There is a `for` block construct that allows you to count iterations unlike `(a)
     for($i in 9 to 30) {
       [-] (<)*$i (+)*100 (>)*$i
     }
+
+Finally, you may use the `terminate` instruction at any time to stop execution at the `linearize` phase.
+Sometime in the future, it'll work in the `exprs` phase too.
 
 Continuations
 -------------

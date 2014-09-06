@@ -100,6 +100,7 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
   def splice           = "local" ~> "{" ~> block <~ "}" ^^ Splice
   def abort            = ("abort" ~> "\"[^\"]*\"".r ^^ (x => Abort(x.substring(1, x.length - 1)))) |
                          ("abort" ^^^ Abort("abort instruction encountered"))
+  def terminate        = "terminate" ^^^ Terminate
 
   def invertBlock      = "invert" ~> "{" ~> block <~ "}" ^^ Invert
 
@@ -116,7 +117,7 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
 
   def instruction   : Parser[Instruction] = basicInstruction | basicBlock | foreverBlock | repeatBlock | ifBlock |
                                             fromToBlock | inlineFnDef | functionCall | splice | abort | comment |
-                                            inlineSetCommand | invertBlock | reset | callCC
+                                            inlineSetCommand | invertBlock | reset | callCC | terminate
   def block         : Parser[Block]       = (instruction <~ ";".?).*
 
   def apply(s:String) = parseAll(block, s.replaceAll("//.*", "")) match {

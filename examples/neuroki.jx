@@ -23,17 +23,18 @@ raw +margins "|Neuroki Magical Fantasy by Lymia Aluysia
               |
               |"
 
-// A few library functions.
-@movePointer($offset) {
-  if($offset != 0) {
-    if($offset > 0) {
-      (>)*$offset
-    } else {
-      (<)*(-$offset)
-    }
-  }
-}
+ (>)*8
+ (+)*1
+<(-)*1
+<(+)*1
+<(-)*1
+<(+)*61
+<(-)*61
+<(-)*61
+<(+)*61
+<(-)*(128-109) // Change our home flag to throw off simpler bots.
 
+// And, then let's just rush!
 @wiggleClear($innerCount, $outerCount) {
   @wiggleClearInner($count) {
     if($count == 0) {
@@ -58,30 +59,16 @@ raw +margins "|Neuroki Magical Fantasy by Lymia Aluysia
 
   @wiggleClearOuter($outerCount, $innerCount, $outerCount)
 }
-@rush($tapePos, $leftDecoy, $rightDecoy) {
-  @movePointer(8-$tapePos) // Rule of 9
-  (
-    > callcc(@break) {
-      // Clear counts shamelessly adjusted to hill.
-      [@wiggleClear($leftDecoy, $rightDecoy)]
-    }
-    - // One tick offset, so we have a chance at bypassing shudder locks.
-      // The extra decoy also helps a little.
-  )*21
-  // make /sure/ the last tape cell gets cleared.
-  (-.--.---.)*-1
-}
+(>)*8 // Rule of 9
+(
+  > callcc(@break) {
+    // Clear counts shamelessly adjusted to hill.
+    [@wiggleClear(30, 32)]
+  }
+  - // One tick offset, so we have a chance at bypassing shudder locks.
+    // The extra decoy also helps a little.
+)*21
 
- (>)*8
- (+)*1
-<(-)*1
-<(+)*1
-<(-)*1
-<(+)*61
-<(-)*61
-<(-)*61
-<(+)*61
-<(-)*(128-109) // Change our home flag to throw off simpler bots.
-
-// And, then let's just rush!
-@rush(0, 30, 32)
+// ... oh screw it. Not worth the binary size.
+// Used to be (-.--.---.)*-1, but, that only earned me /1/ win. Not a big deal.
+terminate

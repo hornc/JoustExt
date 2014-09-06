@@ -47,6 +47,8 @@ object astextension {
   final case class Abort(reason : String) extends SimpleInstruction
   final case class Raw  (comment: String) extends SimpleInstruction
 
+  final case object Terminate extends SimpleInstruction
+
   // synthetic instructions
   trait SyntheticInstruction extends Instruction
   final case class Assign(vars: Map[String, Value], block: Block) extends SyntheticInstruction {
