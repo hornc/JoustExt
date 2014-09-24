@@ -1,4 +1,4 @@
-Nyuroki Magical Fantasy #esoteric  by Lymia Aluysia
+Nyuroki Magical Fantasy #esoteric version by Lymia Aluysia
 Released under the terms of MIT license
 
 (Source code at github.com/Lymia/JoustExt/blob/master/examples/nyuroki-esoteric.jx)
