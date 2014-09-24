@@ -201,10 +201,10 @@ object phases {
     PhaseDef("splice"   , "Processes Splice blocks", (b, g) => doSplice(b)),
 
     // Core compilation phase
-    PhaseDef("linearize", "Transforms constructs such as if/else into BF Joust code", (b, g) => linearize(b)),
+    PhaseDef("linearize", "Transforms constructs such as if/else into BF Joust code", (b, g) => linearize(b))
 
     // Optimization
-    PhaseDef("dce"      , "Simple dead code elimination", (b, g) => dce(b))
+    // PhaseDef("dce"      , "Simple dead code elimination", (b, g) => dce(b))
     // TODO: Optimize [a]a to .a (maybe?)
   )
   def runPhase(p: PhaseDef, b: Block)(implicit options: GenerationOptions) = p.fn(b, options)
