@@ -61,8 +61,9 @@ object Parser extends scala.util.parsing.combinator.RegexParsers {
                      ((expr <~ "<=") ~ expr ^^ {case x~y => Not(GreaterThan(x, y))}) |
                      ((expr <~ ">=") ~ expr ^^ {case x~y => Not(LessThan(x, y))})
     def combination = ("!" ~> pred ^^ Not) |
-                      ((pred <~ "|") ~ pred ^^ {case x~y => Or (x, y)}) |
-                      ((pred <~ "&") ~ pred ^^ {case x~y => And(x, y)})
+                      ((term <~ "|") ~ pred ^^ {case x~y => Or (x, y)}) |
+                      ((term <~ "&") ~ pred ^^ {case x~y => And(x, y)})
+    def term = comparison | ("(" ~> pred <~ ")")
     def pred: Parser[Predicate] = comparison | combination | ("(" ~> pred <~ ")")
   }
   def pred = predicateParsers.pred
