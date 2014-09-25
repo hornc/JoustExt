@@ -39,7 +39,7 @@ raw +margins "|(Nyuroki Magical Fantasy #esoteric version by Lymia Aluysia
   if($count > 0) {
     (
       >
-      ([(-)*10 raw "([+{[-.-+]}]" [-.-+]+ @rushbody($count - 1) raw ")%500"])*2
+      ([(-)*10 raw "([+{}" [-.-+]+ @rushbody($count - 1) raw "])%500"])*2
     )*$count
   }
 }
