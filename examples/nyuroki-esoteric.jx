@@ -24,14 +24,14 @@ raw +margins "|(Nyuroki Magical Fantasy #esoteric version by Lymia Aluysia
               | Source code at http:/" raw +margins "/github.com/Lymia/JoustExt/blob/master/examples/nyuroki-esoteric.jx
               |
               | This bot is pretty simple, really, despite its long code. It rushes to position 8, and starts setting
-              | up decoys. If it sees an already set cell when its setting up its small decoys, it immediately cancel
+              | up decoys. If it sees an already set cell when it's setting up its small decoys, it immediately cancel
               | setting up decoys, and go straight to its clear loop. Otherwise, it sets up some more decoys like a
               | traditional slow rush, and then jumps straight to cell 14-- assuming that smaller tapes would be caught
               | during the decoy setting loops.
               | 
               | The actual clear loop isn't very special. It checks the cell twice to deal with stuff like anticipation
               | and stealth, then does an offset clear of size 10. In the two-cycle clear, if after 500 cycles, the
-              | cell is still not cleared, it assumes its being locked and switches to an opposite polarity three-cycle
+              | cell is still not cleared, it assumes it's being locked and switches to an opposite polarity five-cycle
               | clear.)*0
               |
               |"
@@ -40,7 +40,7 @@ raw +margins "|(Nyuroki Magical Fantasy #esoteric version by Lymia Aluysia
   if($count > 0) {
     (
       >
-      raw "([(-)*10([+{[-.]}][-.]+" @rushbody($count - 1) raw ")%500])*2"
+      raw "([(-)*10([+{[-...]}][-...]+" @rushbody($count - 1) raw ")%500])*2"
     )*$count
   }
 }
