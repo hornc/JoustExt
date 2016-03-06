@@ -31,7 +31,8 @@ raw +margins "|(Nyuroki Magical Fantasy #esoteric version by Lymia Aluysia
               | The actual clear loop isn't very special. It checks the cell twice to deal with stuff like anticipation
               | and stealth, then does an offset clear of size 10. In the two-cycle clear, if after 500 cycles, the
               | cell is still not cleared, it assumes it's being locked and switches to an opposite polarity five-cycle
-              | clear. After clearing a cell, it leaves behind size 1 decoy.)*0
+              | clear. If it still isn't clear, assume we're being locked off the flag. The clear loop leaves behind
+              | size 1 decoy.)*0
               |
               |"
 
@@ -39,7 +40,8 @@ raw +margins "|(Nyuroki Magical Fantasy #esoteric version by Lymia Aluysia
   if($count > 0) {
     (
       >
-      ([(-)*10 raw "([+{}" [-.-+]+ @rushbody($count - 1) raw "])%500"])*2
+      ([(-)*20 raw "([+{}" [-.-+]+ @rushbody($count - 1) raw "])%500"])*2
+      +
     )*$count
   }
 }
