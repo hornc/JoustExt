@@ -1,0 +1,76 @@
+raw +margins "|Nyuroki Magical Fantasy rev 2 by Lymia Aluysia
+              |Released under the terms of MIT license
+              |
+              |Source code can be found at: ( http:/" raw +margins "/github.com/Lymia/JoustExt/blob/master/examples/nyuroki2.jx )*0
+              |
+              |"
+
+@rushbody($offset_size, $check_times) {
+  reset {
+    (
+      callcc(@break) {
+        ([
+          (-)*$offset_size
+          ([+ raw "{}"
+            [-+..--]
+            if($check_times == 1) {
+              // A decoy could have given the opponent time to zero their flag.
+              @rushbody($offset_size, 2) 
+            } else {
+              @break()
+            }
+          ])*2000
+        ])*$check_times
+      }
+      + >
+    )*21
+  }
+}
+
+@marksection() {
+  raw +margins "|
+                |"
+  raw "  " @label() raw": " @section()
+  raw +margins "|
+                |"
+}
+
+@slowrush() {
+  // We set up decoys, play this safe and legit.
+  @label() { raw "Main attack loop" }
+  @section() { > @rushbody(20, 2) }
+  @marksection()
+}
+@fastrush() {
+  // Fast rush happens on short tapes. 
+  @label() { raw "Fast rush loop" }
+  @section() { > @rushbody(5, 2) }
+  @marksection()
+}
+@panicrush() {
+  // Panic rush happens before the opponent can possibly have zeroed their flag. 
+  @label() { raw "Panic rush loop" }
+  @section() { > @rushbody(5, 1) }
+  @marksection()
+}
+
+reset {
+  (>)*8
+   [       @panicrush()](+)*8
+  <[      >@panicrush()](-)*4
+  <[     >>@panicrush()](+)*4
+  <[    >>>@panicrush()](-)*4
+  <[   >>>>@panicrush()](+)*51
+  <[  >>>>>@fastrush ()](-)*51
+  <[ >>>>>>@fastrush ()](-)*51
+  <[>>>>>>>@fastrush ()](+)*51
+  <(+)*18(-)*18 // A short probabilistic lock to give us room to breathe on very short tapes.
+                // 2-cycles that set no decoys clear us right about now.
+  >>>>
+  >(-)*20
+  >(+)*20
+  >(-)*20
+  >
+  (>)*6 // violate rule of 9
+  @slowrush()
+}

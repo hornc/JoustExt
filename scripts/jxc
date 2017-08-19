@@ -1,2 +1,2 @@
 #!/bin/sh
-scala -J-Xss64m -classpath target/scala-2.11/joustext_2.11-1.0.jar moe.lymia.joustext.JoustExt $*
+java -jar target/scala-2.12/joustext-assembly-1.0.jar $*
